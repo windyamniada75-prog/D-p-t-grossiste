@@ -19,6 +19,18 @@ function App() {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
+  const [clients, setClients] = useState([]);
+  const [clientsLoading, setClientsLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState('tous');
+  const [editingId, setEditingId] = useState(null);
+  const [form, setForm] = useState({
+    nom: '',
+    telephone: '',
+    adresse: '',
+    actif: true,
+  });
 
   useEffect(() => {
     if (!supabase) {
@@ -26,20 +38,35 @@ function App() {
       return;
     }
 
+    let alive = true;
+
     supabase.auth.getSession().then(({ data, error }) => {
-      if (error) setMessage(error.message);
+      if (!alive) return;
+      if (error) setMessage('Impossible de vérifier la connexion.');
       setSession(data?.session ?? null);
       setLoading(false);
     });
 
     const { data } = supabase.auth.onAuthStateChange(
       (_event, newSession) => {
-        setSession(newSession);
+        if (alive) setSession(newSession);
       }
     );
 
-    return () => data.subscription.unsubscribe();
+    return () => {
+      alive = false;
+      data.subscription.unsubscribe();
+    };
   }, []);
+
+  useEffect(() => {
+    if (!session || !supabase) {
+      setClients([]);
+      return;
+    }
+
+    loadClients();
+  }, [session]);
 
   async function handleLogin(event) {
     event.preventDefault();
@@ -51,7 +78,11 @@ function App() {
       password,
     });
 
-    if (error) setMessage('Connexion impossible. Vérifiez votre e-mail et votre mot de passe.');
+    if (error) {
+      setMessage(
+        'Connexion impossible. Vérifiez votre e-mail et votre mot de passe.'
+      );
+    }
 
     setBusy(false);
   }
@@ -63,6 +94,182 @@ function App() {
     if (error) setMessage('La déconnexion a échoué. Réessayez.');
   }
 
+  async function loadClients() {
+    setClientsLoading(true);
+    setMessage('');
+
+    const { data, error } = await supabase
+      .from('clients')
+      .select('id, nom, telephone, adresse, actif, created_at')
+      .order('nom', { ascending: true });
+
+    if (error) {
+      setMessage(
+        `Chargement des clients impossible : ${error.message}`
+      );
+    } else {
+      setClients(data ?? []);
+    }
+
+    setClientsLoading(false);
+  }
+
+  function updateField(event) {
+    const { name, value, type, checked } = event.target;
+
+    setForm((previous) => ({
+      ...previous,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
+  }
+
+  function resetForm() {
+    setForm({
+      nom: '',
+      telephone: '',
+      adresse: '',
+      actif: true,
+    });
+    setEditingId(null);
+  }
+
+  function editClient(client) {
+    setEditingId(client.id);
+    setForm({
+      nom: client.nom ?? '',
+      telephone: client.telephone ?? '',
+      adresse: client.adresse ?? '',
+      actif: client.actif,
+    });
+    setMessage('');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  async function saveClient(event) {
+    event.preventDefault();
+
+    if (!session?.user?.id) {
+      setMessage('Vous devez être connecté pour enregistrer un client.');
+      return;
+    }
+
+    const nom = form.nom.trim();
+
+    if (!nom) {
+      setMessage('Le nom du client est obligatoire.');
+      return;
+    }
+
+    setSaving(true);
+    setMessage('');
+
+    const clientData = {
+      nom,
+      telephone: form.telephone.trim() || null,
+      adresse: form.adresse.trim() || null,
+      actif: form.actif,
+    };
+
+    let result;
+
+    if (editingId) {
+      result = await supabase
+        .from('clients')
+        .update(clientData)
+        .eq('id', editingId)
+        .select('id')
+        .maybeSingle();
+    } else {
+      result = await supabase
+        .from('clients')
+        .insert({
+          ...clientData,
+          created_by: session.user.id,
+        })
+        .select('id')
+        .single();
+    }
+
+    if (result.error) {
+      setMessage(
+        `Enregistrement impossible : ${result.error.message}`
+      );
+    } else if (!result.data) {
+      setMessage(
+        'Aucun client n’a été modifié. Vérifiez vos droits d’accès.'
+      );
+    } else {
+      setMessage(
+        editingId
+          ? 'Les informations du client ont été mises à jour.'
+          : 'Le client a été enregistré avec succès.'
+      );
+
+      resetForm();
+      await loadClients();
+    }
+
+    setSaving(false);
+  }
+
+  async function toggleClient(client) {
+    const action = client.actif ? 'désactiver' : 'activer';
+
+    if (
+      !window.confirm(
+        `Voulez-vous vraiment ${action} le client « ${client.nom} » ?`
+      )
+    ) {
+      return;
+    }
+
+    setMessage('');
+
+    const { data, error } = await supabase
+      .from('clients')
+      .update({ actif: !client.actif })
+      .eq('id', client.id)
+      .select('id')
+      .maybeSingle();
+
+    if (error) {
+      setMessage(`Modification impossible : ${error.message}`);
+    } else if (!data) {
+      setMessage(
+        'Aucune modification effectuée. Vérifiez les droits d’accès.'
+      );
+    } else {
+      setMessage(
+        client.actif
+          ? 'Le client a été désactivé.'
+          : 'Le client a été réactivé.'
+      );
+      await loadClients();
+    }
+  }
+
+  const visibleClients = clients.filter((client) => {
+    const text = [
+      client.nom,
+      client.telephone,
+      client.adresse,
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+
+    const matchesSearch = text.includes(search.trim().toLowerCase());
+
+    const matchesFilter =
+      filter === 'tous' ||
+      (filter === 'actifs' && client.actif) ||
+      (filter === 'inactifs' && !client.actif);
+
+    return matchesSearch && matchesFilter;
+  });
+
+  const activeCount = clients.filter((client) => client.actif).length;
+
   const pageStyle = {
     minHeight: '100vh',
     background: '#f4f7f6',
@@ -73,11 +280,42 @@ function App() {
   };
 
   const cardStyle = {
-    background: '#ffffff',
+    background: '#fff',
     padding: '24px',
     borderRadius: '14px',
     border: '1px solid #dce7e2',
-    boxShadow: '0 4px 16px rgba(0,0,0,0.05)',
+    boxShadow: '0 4px 16px rgba(0,0,0,0.04)',
+    marginBottom: '20px',
+  };
+
+  const inputStyle = {
+    display: 'block',
+    boxSizing: 'border-box',
+    width: '100%',
+    padding: '11px',
+    marginTop: '6px',
+    border: '1px solid #bdcec6',
+    borderRadius: '8px',
+    font: 'inherit',
+  };
+
+  const primaryButton = {
+    padding: '11px 16px',
+    border: 'none',
+    borderRadius: '8px',
+    background: '#167653',
+    color: '#fff',
+    fontWeight: 'bold',
+    cursor: 'pointer',
+  };
+
+  const secondaryButton = {
+    padding: '10px 14px',
+    border: '1px solid #bdcec6',
+    borderRadius: '8px',
+    background: '#fff',
+    color: '#18332b',
+    cursor: 'pointer',
   };
 
   if (loading) {
@@ -87,12 +325,11 @@ function App() {
   if (!supabase) {
     return (
       <main style={pageStyle}>
-        <section style={{ ...cardStyle, maxWidth: '560px', margin: '60px auto' }}>
+        <section style={{ ...cardStyle, maxWidth: 560, margin: '60px auto' }}>
           <h1>Configuration nécessaire</h1>
           <p>
-            Les variables Supabase ne sont pas disponibles.
-            Vérifiez VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY
-            dans les paramètres Vercel, puis redéployez le projet.
+            Vérifiez VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY dans
+            les variables d’environnement Vercel, puis redéployez.
           </p>
         </section>
       </main>
@@ -102,7 +339,7 @@ function App() {
   if (!session) {
     return (
       <main style={pageStyle}>
-        <section style={{ ...cardStyle, maxWidth: '420px', margin: '60px auto' }}>
+        <section style={{ ...cardStyle, maxWidth: 420, margin: '60px auto' }}>
           <p style={{ color: '#16805d', fontWeight: 'bold' }}>
             BARKA ÉNERGIE
           </p>
@@ -118,18 +355,12 @@ function App() {
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               required
-              style={{
-                display: 'block',
-                boxSizing: 'border-box',
-                width: '100%',
-                padding: '12px',
-                margin: '8px 0 18px',
-                border: '1px solid #bdcec6',
-                borderRadius: '8px',
-              }}
+              style={inputStyle}
             />
 
-            <label htmlFor="password">Mot de passe</label>
+            <label htmlFor="password" style={{ display: 'block', marginTop: 16 }}>
+              Mot de passe
+            </label>
             <input
               id="password"
               type="password"
@@ -137,129 +368,298 @@ function App() {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               required
-              style={{
-                display: 'block',
-                boxSizing: 'border-box',
-                width: '100%',
-                padding: '12px',
-                margin: '8px 0 18px',
-                border: '1px solid #bdcec6',
-                borderRadius: '8px',
-              }}
+              style={inputStyle}
             />
 
             <button
               type="submit"
               disabled={busy}
-              style={{
-                width: '100%',
-                padding: '13px',
-                border: 'none',
-                borderRadius: '8px',
-                background: '#167653',
-                color: '#ffffff',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-              }}
+              style={{ ...primaryButton, width: '100%', marginTop: 20 }}
             >
               {busy ? 'Connexion en cours…' : 'Se connecter'}
             </button>
           </form>
 
-          {message && (
-            <p role="alert" style={{ color: '#b42318', marginTop: '16px' }}>
-              {message}
-            </p>
-          )}
+          {message && <p role="alert">{message}</p>}
         </section>
       </main>
     );
   }
 
   return (
-    <div className="app">
-      <header className="header">
+    <div style={pageStyle}>
+      <header
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 24,
+        }}
+      >
         <div>
-          <p className="eyebrow">BARKA ÉNERGIE</p>
-          <h1>Gestion du grossiste de gaz</h1>
-          <p className="subtitle">Tableau de bord de gestion</p>
+          <p style={{ color: '#16805d', fontWeight: 'bold', marginBottom: 4 }}>
+            BARKA ÉNERGIE
+          </p>
+          <h1 style={{ margin: '4px 0' }}>Gestion du grossiste de gaz</h1>
+          <p style={{ margin: 0 }}>Connecté : {session.user.email}</p>
         </div>
-        <button type="button" onClick={handleLogout}>
+        <button type="button" onClick={handleLogout} style={secondaryButton}>
           Se déconnecter
         </button>
       </header>
 
-      <main>
-        <section className="welcome">
-          <h2>Bienvenue dans votre espace de gestion</h2>
-          <p>Connecté avec : {session.user.email}</p>
+      {message && (
+        <div
+          role="status"
+          style={{
+            ...cardStyle,
+            padding: 14,
+            color: message.toLowerCase().includes('impossible') ||
+              message.toLowerCase().includes('erreur')
+              ? '#b42318'
+              : '#166534',
+          }}
+        >
+          {message}
+        </div>
+      )}
+
+      <section
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+          gap: 16,
+          marginBottom: 24,
+        }}
+      >
+        <article style={cardStyle}>
+          <span>Total des clients</span>
+          <h2>{clients.length}</h2>
+        </article>
+        <article style={cardStyle}>
+          <span>Clients actifs</span>
+          <h2>{activeCount}</h2>
+        </article>
+        <article style={cardStyle}>
+          <span>Clients inactifs</span>
+          <h2>{clients.length - activeCount}</h2>
+        </article>
+      </section>
+
+      <section style={cardStyle}>
+        <h2>{editingId ? 'Modifier un client' : 'Ajouter un client'}</h2>
+        <p>
+          Enregistrez les dépôts agréés et les autres clients de votre société.
+        </p>
+
+        <form onSubmit={saveClient}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+              gap: 16,
+            }}
+          >
+            <label>
+              Nom du client ou du dépôt *
+              <input
+                name="nom"
+                value={form.nom}
+                onChange={updateField}
+                required
+                maxLength={150}
+                style={inputStyle}
+                placeholder="Nom du dépôt"
+              />
+            </label>
+
+            <label>
+              Téléphone
+              <input
+                name="telephone"
+                type="tel"
+                value={form.telephone}
+                onChange={updateField}
+                maxLength={40}
+                style={inputStyle}
+                placeholder="Numéro de téléphone"
+              />
+            </label>
+
+            <label>
+              Adresse
+              <input
+                name="adresse"
+                value={form.adresse}
+                onChange={updateField}
+                maxLength={250}
+                style={inputStyle}
+                placeholder="Ville, quartier, repère"
+              />
+            </label>
+          </div>
+
+          <label
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              margin: '18px 0',
+            }}
+          >
+            <input
+              type="checkbox"
+              name="actif"
+              checked={form.actif}
+              onChange={updateField}
+            />
+            Client actif
+          </label>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+            <button type="submit" disabled={saving} style={primaryButton}>
+              {saving
+                ? 'Enregistrement…'
+                : editingId
+                  ? 'Enregistrer les modifications'
+                  : 'Enregistrer le client'}
+            </button>
+
+            {editingId && (
+              <button
+                type="button"
+                onClick={resetForm}
+                style={secondaryButton}
+              >
+                Annuler
+              </button>
+            )}
+          </div>
+        </form>
+      </section>
+
+      <section style={cardStyle}>
+        <h2>Liste des clients</h2>
+
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gap: 12,
+            marginBottom: 18,
+          }}
+        >
+          <input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Rechercher un client…"
+            aria-label="Rechercher un client"
+            style={{ ...inputStyle, marginTop: 0 }}
+          />
+
+          <select
+            value={filter}
+            onChange={(event) => setFilter(event.target.value)}
+            aria-label="Filtrer les clients"
+            style={{ ...inputStyle, marginTop: 0 }}
+          >
+            <option value="tous">Tous les clients</option>
+            <option value="actifs">Clients actifs</option>
+            <option value="inactifs">Clients inactifs</option>
+          </select>
+
+          <button
+            type="button"
+            onClick={loadClients}
+            disabled={clientsLoading}
+            style={secondaryButton}
+          >
+            {clientsLoading ? 'Chargement…' : 'Actualiser la liste'}
+          </button>
+        </div>
+
+        {clientsLoading ? (
+          <p>Chargement des clients…</p>
+        ) : visibleClients.length === 0 ? (
           <p>
-            Gérez progressivement vos bouteilles, livraisons, clients,
-            recettes et dépenses.
+            {clients.length === 0
+              ? 'Aucun client enregistré pour le moment. Utilisez le formulaire ci-dessus pour en ajouter un.'
+              : 'Aucun client ne correspond à votre recherche.'}
           </p>
-        </section>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table
+              style={{
+                width: '100%',
+                borderCollapse: 'collapse',
+                minWidth: 650,
+              }}
+            >
+              <thead>
+                <tr style={{ textAlign: 'left', background: '#eef5f1' }}>
+                  {['Nom', 'Téléphone', 'Adresse', 'Statut', 'Actions'].map(
+                    (heading) => (
+                      <th
+                        key={heading}
+                        style={{
+                          padding: 12,
+                          borderBottom: '1px solid #dce7e2',
+                        }}
+                      >
+                        {heading}
+                      </th>
+                    )
+                  )}
+                </tr>
+              </thead>
+              <tbody>
+                {visibleClients.map((client) => (
+                  <tr key={client.id}>
+                    <td style={{ padding: 12, borderBottom: '1px solid #e5ece8' }}>
+                      {client.nom}
+                    </td>
+                    <td style={{ padding: 12, borderBottom: '1px solid #e5ece8' }}>
+                      {client.telephone || '—'}
+                    </td>
+                    <td style={{ padding: 12, borderBottom: '1px solid #e5ece8' }}>
+                      {client.adresse || '—'}
+                    </td>
+                    <td style={{ padding: 12, borderBottom: '1px solid #e5ece8' }}>
+                      {client.actif ? 'Actif' : 'Inactif'}
+                    </td>
+                    <td style={{ padding: 12, borderBottom: '1px solid #e5ece8' }}>
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        <button
+                          type="button"
+                          onClick={() => editClient(client)}
+                          style={secondaryButton}
+                        >
+                          Modifier
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => toggleClient(client)}
+                          style={secondaryButton}
+                        >
+                          {client.actif ? 'Désactiver' : 'Réactiver'}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
 
-        <section className="stats">
-          <article className="stat-card">
-            <span>Chauffeurs</span>
-            <strong>4</strong>
-            <small>Équipe de livraison</small>
-          </article>
-          <article className="stat-card">
-            <span>Capacité totale des camions</span>
-            <strong>2 205</strong>
-            <small>Bouteilles par chargement</small>
-          </article>
-          <article className="stat-card">
-            <span>Ration journalière</span>
-            <strong>500 F CFA</strong>
-            <small>Par travailleur présent</small>
-          </article>
-        </section>
-
-        <h2 className="section-title">Modules de gestion</h2>
-        <section className="modules">
-          <article className="module-card">
-            <span className="module-icon">🚚</span>
-            <h3>Chauffeurs et camions</h3>
-            <p>Suivi de l’équipe et des capacités de transport.</p>
-          </article>
-          <article className="module-card">
-            <span className="module-icon">🧯</span>
-            <h3>Stock de bouteilles</h3>
-            <p>Suivi des bouteilles de 6 kg et de 12 kg.</p>
-          </article>
-          <article className="module-card">
-            <span className="module-icon">📦</span>
-            <h3>Livraisons et clients</h3>
-            <p>Suivi des livraisons aux dépôts agréés.</p>
-          </article>
-          <article className="module-card">
-            <span className="module-icon">💰</span>
-            <h3>Comptabilité</h3>
-            <p>Suivi des recettes et des dépenses.</p>
-          </article>
-          <article className="module-card">
-            <span className="module-icon">🧾</span>
-            <h3>Rations journalières</h3>
-            <p>500 F CFA par travailleur présent.</p>
-          </article>
-          <article className="module-card">
-            <span className="module-icon">📊</span>
-            <h3>Rapports</h3>
-            <p>Préparation des bilans et du suivi mensuel.</p>
-          </article>
-        </section>
-
-        <footer>
-          Espace connecté. Les modules de saisie et les données restent à
-          configurer et à tester.
-        </footer>
-      </main>
-      {message && <p role="alert">{message}</p>}
+      <footer style={{ textAlign: 'center', padding: 16, color: '#52675f' }}>
+        Espace de gestion connecté. Les clients sont chargés depuis Supabase.
+      </footer>
     </div>
   );
 }
 
 createRoot(document.getElementById('root')).render(<App />);
-
