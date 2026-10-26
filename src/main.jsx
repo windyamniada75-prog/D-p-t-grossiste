@@ -1,4 +1,165 @@
-if (!session) return (
+import { useEffect, useState } from 'react';
+import { createRoot } from 'react-dom/client';
+import { createClient } from '@supabase/supabase-js';
+import './style.css';
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
+
+const pageStyle = { minHeight: '100vh', background: '#f4f7f6', color: '#18332b', fontFamily: 'Arial, sans-serif', boxSizing: 'border-box' };
+const cardStyle = { background: '#fff', padding: 20, borderRadius: 12, border: '1px solid #dce7e2', boxShadow: '0 4px 16px rgba(0,0,0,.04)', marginBottom: 16 };
+const inputStyle = { display: 'block', boxSizing: 'border-box', width: '100%', padding: 11, marginTop: 6, marginBottom: 14, border: '1px solid #bdcec6', borderRadius: 8, font: 'inherit' };
+const buttonStyle = { padding: '10px 14px', border: 0, borderRadius: 8, background: '#167653', color: '#fff', fontWeight: 700, cursor: 'pointer' };
+
+function App() {
+  const [session, setSession] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState('');
+  const [page, setPage] = useState('dashboard');
+  const [clients, setClients] = useState([]);
+  const [clientsLoading, setClientsLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState('tous');
+  const [editingId, setEditingId] = useState(null);
+  const [form, setForm] = useState({ nom: '', telephone: '', adresse: '', actif: true });
+
+  useEffect(() => {
+    if (!supabase) { setLoading(false); return; }
+    let alive = true;
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (!alive) return;
+      if (error) setMessage('Impossible de vérifier la connexion. Rechargez la page.');
+      setSession(data?.session ?? null);
+      setLoading(false);
+    }).catch(() => {
+      if (alive) { setMessage('Erreur lors de la vérification de la connexion.'); setLoading(false); }
+    });
+    const { data } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      if (alive) { setSession(newSession); setPage('dashboard'); }
+    });
+    return () => { alive = false; data.subscription.unsubscribe(); };
+  }, []);
+
+  useEffect(() => {
+    if (!session || !supabase) { setClients([]); return; }
+    loadClients();
+  }, [session]);
+
+  async function handleLogin(event) {
+    event.preventDefault();
+    if (!supabase) return;
+    setBusy(true); setMessage('');
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) setMessage('Connexion impossible. Vérifiez votre e-mail et votre mot de passe.');
+    } catch {
+      setMessage('Erreur de connexion. Vérifiez votre connexion Internet puis réessayez.');
+    } finally { setBusy(false); }
+  }
+
+  async function handleLogout() {
+    if (!supabase) return;
+    setMessage('');
+    const { error } = await supabase.auth.signOut();
+    if (error) setMessage('La déconnexion a échoué. Réessayez.');
+    else { setPage('dashboard'); resetForm(); }
+  }
+
+  async function loadClients() {
+    if (!supabase || !session) return;
+    setClientsLoading(true);
+    try {
+      const { data, error } = await supabase.from('clients')
+        .select('id, nom, telephone, adresse, actif, created_at')
+        .order('nom', { ascending: true });
+      if (error) setMessage(`Chargement des clients impossible : ${error.message}`);
+      else setClients(data ?? []);
+    } catch {
+      setMessage('Impossible de contacter Supabase pour charger les clients.');
+    } finally { setClientsLoading(false); }
+  }
+
+  function updateField(event) {
+    const { name, value, type, checked } = event.target;
+    setForm(previous => ({ ...previous, [name]: type === 'checkbox' ? checked : value }));
+  }
+
+  function resetForm() {
+    setForm({ nom: '', telephone: '', adresse: '', actif: true });
+    setEditingId(null);
+  }
+
+  function editClient(client) {
+    setEditingId(client.id);
+    setForm({ nom: client.nom ?? '', telephone: client.telephone ?? '', adresse: client.adresse ?? '', actif: client.actif });
+    setMessage('');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  async function saveClient(event) {
+    event.preventDefault();
+    if (!supabase || !session?.user?.id) { setMessage('Vous devez être connecté pour enregistrer un client.'); return; }
+    const nom = form.nom.trim();
+    if (!nom) { setMessage('Le nom du client est obligatoire.'); return; }
+    setSaving(true); setMessage('');
+    const clientData = { nom, telephone: form.telephone.trim() || null, adresse: form.adresse.trim() || null, actif: form.actif };
+    try {
+      let result;
+      if (editingId) {
+        result = await supabase.from('clients').update(clientData).eq('id', editingId).select('id').maybeSingle();
+      } else {
+        result = await supabase.from('clients').insert({ ...clientData, created_by: session.user.id }).select('id').single();
+      }
+      if (result.error) setMessage(`Enregistrement impossible : ${result.error.message}`);
+      else if (!result.data) setMessage('Aucune modification effectuée. Vérifiez les droits d’accès Supabase.');
+      else {
+        setMessage(editingId ? 'Les informations du client ont été mises à jour.' : 'Le client a été enregistré avec succès.');
+        resetForm();
+        await loadClients();
+      }
+    } catch {
+      setMessage('Erreur inattendue lors de l’enregistrement du client.');
+    } finally { setSaving(false); }
+  }
+
+  async function toggleClient(client) {
+    if (!supabase) return;
+    const action = client.actif ? 'désactiver' : 'réactiver';
+    if (!window.confirm(`Voulez-vous vraiment ${action} le client « ${client.nom} » ?`)) return;
+    setMessage('');
+    try {
+      const { data, error } = await supabase.from('clients').update({ actif: !client.actif }).eq('id', client.id).select('id').maybeSingle();
+      if (error) setMessage(`Modification impossible : ${error.message}`);
+      else if (!data) setMessage('Aucune modification effectuée. Vérifiez les droits d’accès.');
+      else { setMessage(client.actif ? 'Le client a été désactivé.' : 'Le client a été réactivé.'); await loadClients(); }
+    } catch { setMessage('Erreur inattendue lors de la modification du client.'); }
+  }
+
+  const visibleClients = clients.filter(client => {
+    const text = [client.nom, client.telephone, client.adresse].filter(Boolean).join(' ').toLowerCase();
+    const matchesSearch = text.includes(search.trim().toLowerCase());
+    const matchesFilter = filter === 'tous' || (filter === 'actifs' && client.actif) || (filter === 'inactifs' && !client.actif);
+    return matchesSearch && matchesFilter;
+  });
+  const activeCount = clients.filter(client => client.actif).length;
+
+  if (loading) return <main style={{ ...pageStyle, padding: 32 }}>Vérification de votre connexion…</main>;
+
+  if (!supabase) return (
+    <main style={{ ...pageStyle, padding: 24 }}>
+      <section style={{ ...cardStyle, maxWidth: 560, margin: '60px auto' }}>
+        <h1>Configuration nécessaire</h1>
+        <p>Les variables VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY ne sont pas configurées. Vérifiez-les dans Vercel puis redéployez.</p>
+      </section>
+    </main>
+  );
+
+  if (!session) return (
     <main style={{ ...pageStyle, padding: 24, display: 'grid', placeItems: 'center' }}>
       <section style={{ ...cardStyle, maxWidth: 420, width: '100%', boxSizing: 'border-box' }}>
         <p style={{ color: '#16805d', fontWeight: 700 }}>BARKA ÉNERGIE</p>
