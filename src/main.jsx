@@ -374,9 +374,13 @@ function App() {
                 </select>
 
                 <label>Emplacement</label>
-                <select value={stockEmplacement} onChange={e => setStockEmplacement(e.target.value)} style={inputStyle}>
-                  <option value="depot">Au dépôt</option>
-                </select>
+               
+<select value={stockEmplacement} onChange={e => setStockEmplacement(e.target.value)} style={inputStyle}>
+  <option value="depot">Dépôt principal</option>
+  <option value="camion">Dans un camion</option>
+  <option value="client">Chez un dépôt client</option>
+</select>
+
 
                 <label>Quantité de bouteilles</label>
                 <input
