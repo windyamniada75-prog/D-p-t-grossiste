@@ -341,9 +341,104 @@ function App() {
                   {visibleClients.map(client => <tr key={client.id}><td style={{ padding: 12, borderBottom: '1px solid #e5ece8' }}>{client.nom}</td><td style={{ padding: 12, borderBottom: '1px solid #e5ece8' }}>{client.telephone || '—'}</td><td style={{ padding: 12, borderBottom: '1px solid #e5ece8' }}>{client.adresse || '—'}</td><td style={{ padding: 12, borderBottom: '1px solid #e5ece8', color: client.actif ? '#167653' : '#b42318' }}>{client.actif ? 'Actif' : 'Inactif'}</td><td style={{ padding: 12, borderBottom: '1px solid #e5ece8' }}><div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}><button type="button" onClick={() => editClient(client)} style={{ ...buttonStyle, background: '#2563eb' }}>Modifier</button><button type="button" onClick={() => toggleClient(client)} style={{ ...buttonStyle, background: client.actif ? '#b42318' : '#64748b' }}>{client.actif ? 'Désactiver' : 'Réactiver'}</button></div></td></tr>)}
                 </tbody></table></div>
               )}
+           
             </section>
           </>}
+
+          {page === 'bouteilles' && <>
+            <h1 style={{ marginTop: 0 }}>Gestion des bouteilles</h1>
+            <p style={{ color: '#64748b' }}>
+              Enregistrez les quantités de bouteilles pleines, vides et hors service.
+            </p>
+
+            <section style={cardStyle}>
+              <h2 style={{ marginTop: 0 }}>Enregistrer une quantité</h2>
+
+              <form onSubmit={saveStockBouteilles}>
+                <label>Format de bouteille</label>
+                <select value={stockFormat} onChange={e => setStockFormat(e.target.value)} style={inputStyle}>
+                  <option value="6">6 kg</option>
+                  <option value="12">12 kg</option>
+                </select>
+
+                <label>Contenu</label>
+                <select value={stockContenu} onChange={e => setStockContenu(e.target.value)} style={inputStyle}>
+                  <option value="vide">Vide</option>
+                  <option value="pleine">Pleine</option>
+                </select>
+
+                <label>État</label>
+                <select value={stockEtat} onChange={e => setStockEtat(e.target.value)} style={inputStyle}>
+                  <option value="utilisable">Utilisable</option>
+                  <option value="hors_service">Hors service</option>
+                </select>
+
+                <label>Emplacement</label>
+                <select value={stockEmplacement} onChange={e => setStockEmplacement(e.target.value)} style={inputStyle}>
+                  <option value="depot">Au dépôt</option>
+                </select>
+
+                <label>Quantité de bouteilles</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={stockQuantite}
+                  onChange={e => setStockQuantite(e.target.value)}
+                  required
+                  style={inputStyle}
+                  placeholder="Ex. : 100"
+                />
+
+                {stockMessage && <p role="status">{stockMessage}</p>}
+
+                <button type="submit" disabled={stockLoading} style={buttonStyle}>
+                  {stockLoading ? 'Enregistrement…' : 'Enregistrer le stock'}
+                </button>
+              </form>
+            </section>
+
+            <section style={cardStyle}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+                <h2 style={{ marginTop: 0 }}>Stock enregistré</h2>
+                <button type="button" onClick={loadStockBouteilles} disabled={stockLoading} style={buttonStyle}>
+                  {stockLoading ? 'Chargement…' : 'Actualiser'}
+                </button>
+              </div>
+
+              {stockLoading ? <p>Chargement du stock…</p> : stockBouteilles.length === 0 ? (
+                <p style={{ color: '#64748b' }}>Aucune quantité enregistrée pour le moment.</p>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 600 }}>
+                    <thead>
+                      <tr style={{ textAlign: 'left', background: '#eef5f1' }}>
+                        <th style={{ padding: 12 }}>Format</th>
+                        <th style={{ padding: 12 }}>Contenu</th>
+                        <th style={{ padding: 12 }}>État</th>
+                        <th style={{ padding: 12 }}>Emplacement</th>
+                        <th style={{ padding: 12 }}>Quantité</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {stockBouteilles.map(item => (
+                        <tr key={item.id}>
+                          <td style={{ padding: 12 }}>{item.format_kg} kg</td>
+                          <td style={{ padding: 12 }}>{item.contenu === 'pleine' ? 'Pleine' : 'Vide'}</td>
+                          <td style={{ padding: 12 }}>{item.etat === 'hors_service' ? 'Hors service' : 'Utilisable'}</td>
+                          <td style={{ padding: 12 }}>Dépôt</td>
+                          <td style={{ padding: 12 }}>{item.quantite}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </section>
+          </>}
+
         </main>
+
       </div>
     </div>
   );
