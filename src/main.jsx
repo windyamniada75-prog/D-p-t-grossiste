@@ -21,6 +21,14 @@ function App() {
   const [message, setMessage] = useState('');
   const [page, setPage] = useState('dashboard');
   const [clients, setClients] = useState([]);
+    const [stockBouteilles, setStockBouteilles] = useState([]);
+  const [stockLoading, setStockLoading] = useState(false);
+  const [stockFormat, setStockFormat] = useState('6');
+  const [stockContenu, setStockContenu] = useState('vide');
+  const [stockEtat, setStockEtat] = useState('utilisable');
+  const [stockEmplacement, setStockEmplacement] = useState('depot');
+  const [stockQuantite, setStockQuantite] = useState('');
+  const [stockMessage, setStockMessage] = useState('');
   const [clientsLoading, setClientsLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState('');
@@ -45,10 +53,17 @@ function App() {
     return () => { alive = false; data.subscription.unsubscribe(); };
   }, []);
 
+ 
   useEffect(() => {
-    if (!session || !supabase) { setClients([]); return; }
+    if (!session || !supabase) {
+      setClients([]);
+      setStockBouteilles([]);
+      return;
+    }
     loadClients();
+    loadStockBouteilles();
   }, [session]);
+
 
   async function handleLogin(event) {
     event.preventDefault();
@@ -83,7 +98,74 @@ function App() {
       setMessage('Impossible de contacter Supabase pour charger les clients.');
     } finally { setClientsLoading(false); }
   }
+  async function loadStockBouteilles() {
+    if (!supabase || !session) return;
+    setStockLoading(true);
+    setStockMessage('');
 
+    try {
+      const { data, error } = await supabase
+        .from('stock_bouteilles')
+        .select('id, format_kg, contenu, etat, emplacement, quantite, camion_id, client_id, created_at')
+        .order('format_kg', { ascending: true });
+
+      if (error) {
+        setStockMessage('Chargement du stock impossible : ' + error.message);
+      } else {
+        setStockBouteilles(data || []);
+      }
+    } catch {
+      setStockMessage('Impossible de contacter Supabase pour charger le stock.');
+    } finally {
+      setStockLoading(false);
+    }
+  }
+
+  async function saveStockBouteilles(event) {
+    event.preventDefault();
+
+    if (!supabase || !session?.user?.id) {
+      setStockMessage('Vous devez être connecté pour enregistrer le stock.');
+      return;
+    }
+
+    const quantite = Number(stockQuantite);
+
+    if (!Number.isInteger(quantite) || quantite < 0 || stockQuantite.trim() === '') {
+      setStockMessage('Saisissez une quantité entière égale ou supérieure à zéro.');
+      return;
+    }
+
+    setStockLoading(true);
+    setStockMessage('');
+
+    try {
+      const { error } = await supabase
+        .from('stock_bouteilles')
+        .insert({
+          format_kg: Number(stockFormat),
+          contenu: stockContenu,
+          etat: stockEtat,
+          emplacement: stockEmplacement,
+          quantite,
+          created_by: session.user.id
+        });
+
+      if (error) {
+        setStockMessage('Enregistrement impossible : ' + error.message);
+      } else {
+        setStockMessage('La quantité de bouteilles a été enregistrée.');
+        setStockQuantite('');
+        await loadStockBouteilles();
+      }
+    } catch {
+      setStockMessage('Erreur lors de l’enregistrement du stock.');
+    } finally {
+      setStockLoading(false);
+    }
+  }
+
+  
   function updateField(event) {
     const { name, value, type, checked } = event.target;
     setForm(previous => ({ ...previous, [name]: type === 'checkbox' ? checked : value }));
