@@ -412,13 +412,16 @@ function App() {
                 <div style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 600 }}>
                     <thead>
-                      <tr style={{ textAlign: 'left', background: '#eef5f1' }}>
-                        <th style={{ padding: 12 }}>Format</th>
-                        <th style={{ padding: 12 }}>Contenu</th>
-                        <th style={{ padding: 12 }}>État</th>
-                        <th style={{ padding: 12 }}>Emplacement</th>
-                        <th style={{ padding: 12 }}>Quantité</th>
-                      </tr>
+                      
+<tr style={{ textAlign: 'left', background: '#eef5f1' }}>
+  <th style={{ padding: 12 }}>Date d'enregistrement</th>
+  <th style={{ padding: 12 }}>Format</th>
+  <th style={{ padding: 12 }}>Contenu</th>
+  <th style={{ padding: 12 }}>État</th>
+  <th style={{ padding: 12 }}>Emplacement</th>
+  <th style={{ padding: 12 }}>Quantité</th>
+</tr>
+
                     </thead>
                     <tbody>
       
