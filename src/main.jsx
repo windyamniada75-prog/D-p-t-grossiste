@@ -421,11 +421,24 @@ function App() {
                       </tr>
                     </thead>
                     <tbody>
+      
                       {stockBouteilles.map(item => (
                         <tr key={item.id}>
+                          <td style={{ padding: 12 }}>
+                            {item.created_at
+                              ? new Date(item.created_at).toLocaleString('fr-FR', {
+                                  dateStyle: 'short',
+                                  timeStyle: 'short'
+                                })
+                              : '—'}
+                          </td>
                           <td style={{ padding: 12 }}>{item.format_kg} kg</td>
-                          <td style={{ padding: 12 }}>{item.contenu === 'pleine' ? 'Pleine' : 'Vide'}</td>
-                          <td style={{ padding: 12 }}>{item.etat === 'hors_service' ? 'Hors service' : 'Utilisable'}</td>
+                          <td style={{ padding: 12 }}>
+                            {item.contenu === 'pleine' ? 'Pleine' : 'Vide'}
+                          </td>
+                          <td style={{ padding: 12 }}>
+                            {item.etat === 'hors_service' ? 'Hors service' : 'Utilisable'}
+                          </td>
                           <td style={{ padding: 12 }}>Dépôt</td>
                           <td style={{ padding: 12 }}>{item.quantite}</td>
                         </tr>
