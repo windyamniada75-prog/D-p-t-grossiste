@@ -259,9 +259,10 @@ function App() {
     </main>
   );
 
-  const navItems = [
+   const navItems = [
     ['dashboard', 'Tableau de bord'],
     ['clients', 'Clients'],
+    ['bouteilles', 'Bouteilles'],
   ];
   const otherModules = ['Bouteilles', 'Chauffeurs', 'Livraisons', 'Mouvements de stock', 'Comptabilité', 'Rations'];
 
