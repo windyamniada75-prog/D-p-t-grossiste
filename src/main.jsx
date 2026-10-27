@@ -501,7 +501,7 @@ async function saveStockBouteilles(event) {
   {item.emplacement === 'camion'
     ? 'Camion'
     : item.emplacement === 'client'
-      ? 'Dépôt client'
+      ? 'client'
       : 'Dépôt'}
 </td>
 <td style={{ padding: 12 }}>
