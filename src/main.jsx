@@ -337,8 +337,18 @@ async function saveStockBouteilles(event) {
             </div>
             <h2>Modules de gestion</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
-              {[['Clients', 'Gérer les dépôts et les contacts.', true], ...otherModules.map(name => [name, 'Module à développer dans une prochaine étape.', false])].map(([title, description, ready]) => (
-                <article key={title} style={cardStyle}><h3 style={{ marginTop: 0 }}>{title}</h3><p style={{ color: '#64748b', minHeight: 38 }}>{description}</p><button type="button" style={{ ...buttonStyle, background: ready ? '#176b45' : '#e2e8f0', color: ready ? '#fff' : '#475569' }} onClick={() => ready ? navigate('clients') : setMessage(`Le module « ${title} » sera développé dans une prochaine étape.`)}>{ready ? 'Ouvrir le module' : 'À développer'}</button></article>
+             
+{[
+  ['Clients', 'Gérer les dépôts et les contacts.', true, 'clients'],
+  ['Bouteilles', 'Gérer le stock de bouteilles et la corbeille.', true, 'bouteilles'],
+  ...otherModules
+    .filter(name => name !== 'Bouteilles')
+    .map(name => [name, 'Module à développer dans une prochaine étape.', false, ''])
+].map(([title, description, ready, key]) => (
+
+    
+<article key={title} style={cardStyle}><h3 style={{ marginTop: 0 }}>{title}</h3><p style={{ color: '#64748b', minHeight: 38 }}>{description}</p><button type="button" style={{ ...buttonStyle, background: ready || title === 'Bouteilles' ? '#176b45' : '#e2e8f0', color: ready || title === 'Bouteilles' ? '#fff' : '#475569' }} onClick={() => title === 'Bouteilles' ? navigate('bouteilles') : ready ? navigate('clients') : setMessage(`Le module « ${title} » sera développé dans une prochaine étape.`)}>{ready || title === 'Bouteilles' ? 'Ouvrir le module' : 'À développer'}</button></article>
+
               ))}
             </div>
           </>}
