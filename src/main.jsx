@@ -31,6 +31,8 @@ function App() {
   const [camions, setCamions] = useState([]);
   const [stockQuantite, setStockQuantite] = useState('');
   const [stockMessage, setStockMessage] = useState('');
+  const [stockVue, setStockVue] = useState('actif');
+const [stockActionId, setStockActionId] = useState('');
   const [clientsLoading, setClientsLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState('');
@@ -127,7 +129,8 @@ async function loadCamions() {
     try {
       const { data, error } = await supabase
         .from('stock_bouteilles')
-        .select('id, format_kg, contenu, etat, emplacement, quantite, camion_id, client_id, created_at')
+        .select('id, format_kg, contenu, etat, emplacement, quantite, camion_id, client_id, created_at, supprime')
+        .eq('supprime', stockVue === 'corbeille')
         .order('format_kg', { ascending: true });
 
       if (error) {
@@ -384,6 +387,29 @@ async function saveStockBouteilles(event) {
             <section style={cardStyle}>
               <h2 style={{ marginTop: 0 }}>Enregistrer une quantité</h2>
 
+              <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
+  <button
+    type="button"
+    onClick={() => {
+      setStockVue('actif');
+      loadStockBouteilles();
+    }}
+    style={inputStyle}
+  >
+    Stock normal
+  </button>
+
+  <button
+    type="button"
+    onClick={() => {
+      setStockVue('corbeille');
+      loadStockBouteilles();
+    }}
+    style={inputStyle}
+  >
+    Corbeille
+  </button>
+</div>
               <form onSubmit={saveStockBouteilles}>
                 <label>Format de bouteille</label>
                 <select value={stockFormat} onChange={e => setStockFormat(e.target.value)} style={inputStyle}>
@@ -474,53 +500,92 @@ async function saveStockBouteilles(event) {
   <th style={{ padding: 12 }}>Emplacement</th>
 <th style={{ padding: 12 }}>Camion / Dépôt client</th>
   <th style={{ padding: 12 }}>Quantité</th>
+  <th style={{ padding: 12 }}>Actions</th>
 </tr>
 
                     </thead>
                     <tbody>
       
-                      {stockBouteilles.map(item => (
-                        <tr key={item.id}>
-                          <td style={{ padding: 12 }}>
-                            {item.created_at
-                              ? new Date(item.created_at).toLocaleString('fr-FR', {
-                                  dateStyle: 'short',
-                                  timeStyle: 'short'
-                                })
-                              : '—'}
-                          </td>
-                          <td style={{ padding: 12 }}>{item.format_kg} kg</td>
-                          <td style={{ padding: 12 }}>
-                            {item.contenu === 'pleine' ? 'Pleine' : 'Vide'}
-                          </td>
-                          <td style={{ padding: 12 }}>
-                            {item.etat === 'hors_service' ? 'Hors service' : 'Utilisable'}
-                          </td>
-                         
-<td style={{ padding: 12 }}>
-  {item.emplacement === 'camion'
-    ? 'Camion'
-    : item.emplacement === 'client'
-      ? 'client'
-      : 'Dépôt'}
-</td>
-<td style={{ padding: 12 }}>
-  {item.camion_id
-    ? camions.find(camion => camion.id === item.camion_id)?.nom || 'Camion inconnu'
-    : item.client_id
-      ? clients.find(client => client.id === item.client_id)?.nom || 'Client inconnu'
-      : '—'}
-</td>
+                     
+{stockBouteilles.map(item => (
+  <tr key={item.id}>
+    <td style={{ padding: 12 }}>
+      {item.created_at
+        ? new Date(item.created_at).toLocaleString('fr-FR', {
+            dateStyle: 'short',
+            timeStyle: 'short'
+          })
+        : '—'}
+    </td>
+    <td style={{ padding: 12 }}>{item.format_kg} kg</td>
+    <td style={{ padding: 12 }}>
+      {item.contenu === 'pleine' ? 'Pleine' : 'Vide'}
+    </td>
+    <td style={{ padding: 12 }}>
+      {item.etat === 'hors_service' ? 'Hors service' : 'Utilisable'}
+    </td>
+    <td style={{ padding: 12 }}>
+      {item.emplacement === 'camion'
+        ? 'Camion'
+        : item.emplacement === 'client'
+          ? 'Client'
+          : 'Dépôt'}
+    </td>
+    <td style={{ padding: 12 }}>
+      {item.camion_id
+        ? camions.find(camion => camion.id === item.camion_id)?.nom || 'Camion inconnu'
+        : item.client_id
+          ? clients.find(client => client.id === item.client_id)?.nom || 'Client inconnu'
+          : '—'}
+    </td>
+    <td style={{ padding: 12 }}>{item.quantite}</td>
+    <td style={{ padding: 12 }}>
+      <button
+        type="button"
+        disabled={stockActionId === item.id}
+        onClick={async () => {
+          const action = stockVue === 'corbeille' ? 'restaurer' : 'mettre à la corbeille';
 
-                          <td style={{ padding: 12 }}>{item.quantite}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </section>
-          </>}
+          if (!window.confirm(`Voulez-vous ${action} cet enregistrement ?`)) {
+            return;
+          }
+
+          setStockActionId(item.id);
+          setStockMessage('');
+
+          try {
+            const { error } = await supabase
+              .from('stock_bouteilles')
+              .update({ supprime: stockVue !== 'corbeille' })
+              .eq('id', item.id);
+
+            if (error) {
+              setStockMessage('Erreur : ' + error.message);
+            } else {
+              setStockMessage(
+                stockVue === 'corbeille'
+                  ? 'Enregistrement restauré.'
+                  : 'Enregistrement déplacé dans la corbeille.'
+              );
+              await loadStockBouteilles();
+            }
+          } catch {
+            setStockMessage('Une erreur est survenue.');
+          } finally {
+            setStockActionId('');
+          }
+        }}
+      >
+        {stockActionId === item.id
+          ? 'Patientez...'
+          : stockVue === 'corbeille'
+            ? 'Restaurer'
+            : 'Corbeille'}
+      </button>
+    </td>
+  </tr>
+))}
+
 
         </main>
 
