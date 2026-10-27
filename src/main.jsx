@@ -381,6 +381,25 @@ function App() {
   <option value="client">Chez un dépôt client</option>
 </select>
 
+{stockEmplacement === 'camion' && (
+  <>
+    <label>Camion concerné</label>
+    <select
+      value={stockCamionId}
+      onChange={e => setStockCamionId(e.target.value)}
+      style={inputStyle}
+      required
+    >
+      <option value="">-- Choisir un camion --</option>
+      {camions.map(camion => (
+        <option key={camion.id} value={camion.id}>
+          {camion.nom}
+        </option>
+      ))}
+    </select>
+  </>
+)}
+
 
                 <label>Quantité de bouteilles</label>
                 <input
