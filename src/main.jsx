@@ -472,6 +472,7 @@ async function saveStockBouteilles(event) {
   <th style={{ padding: 12 }}>Contenu</th>
   <th style={{ padding: 12 }}>État</th>
   <th style={{ padding: 12 }}>Emplacement</th>
+<th style={{ padding: 12 }}>Camion / Dépôt client</th>
   <th style={{ padding: 12 }}>Quantité</th>
 </tr>
 
@@ -495,7 +496,22 @@ async function saveStockBouteilles(event) {
                           <td style={{ padding: 12 }}>
                             {item.etat === 'hors_service' ? 'Hors service' : 'Utilisable'}
                           </td>
-                          <td style={{ padding: 12 }}>Dépôt</td>
+                         
+<td style={{ padding: 12 }}>
+  {item.emplacement === 'camion'
+    ? 'Camion'
+    : item.emplacement === 'client'
+      ? 'Dépôt client'
+      : 'Dépôt'}
+</td>
+<td style={{ padding: 12 }}>
+  {item.camion_id
+    ? camions.find(camion => camion.id === item.camion_id)?.nom || 'Camion inconnu'
+    : item.client_id
+      ? clients.find(client => client.id === item.client_id)?.nom || 'Client inconnu'
+      : '—'}
+</td>
+
                           <td style={{ padding: 12 }}>{item.quantite}</td>
                         </tr>
                       ))}
