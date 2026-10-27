@@ -507,6 +507,7 @@ async function saveStockBouteilles(event) {
                     <tbody>
       
                      
+
 {stockBouteilles.map(item => (
   <tr key={item.id}>
     <td style={{ padding: 12 }}>
@@ -544,11 +545,10 @@ async function saveStockBouteilles(event) {
         type="button"
         disabled={stockActionId === item.id}
         onClick={async () => {
-          const action = stockVue === 'corbeille' ? 'restaurer' : 'mettre à la corbeille';
+          const dansCorbeille = stockVue === 'corbeille';
+          const action = dansCorbeille ? 'restaurer' : 'mettre à la corbeille';
 
-          if (!window.confirm(`Voulez-vous ${action} cet enregistrement ?`)) {
-            return;
-          }
+          if (!window.confirm(`Voulez-vous ${action} cet enregistrement ?`)) return;
 
           setStockActionId(item.id);
           setStockMessage('');
@@ -556,14 +556,14 @@ async function saveStockBouteilles(event) {
           try {
             const { error } = await supabase
               .from('stock_bouteilles')
-              .update({ supprime: stockVue !== 'corbeille' })
+              .update({ supprime: !dansCorbeille })
               .eq('id', item.id);
 
             if (error) {
               setStockMessage('Erreur : ' + error.message);
             } else {
               setStockMessage(
-                stockVue === 'corbeille'
+                dansCorbeille
                   ? 'Enregistrement restauré.'
                   : 'Enregistrement déplacé dans la corbeille.'
               );
@@ -585,6 +585,12 @@ async function saveStockBouteilles(event) {
     </td>
   </tr>
 ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </section>
+          </>}
 
 
         </main>
