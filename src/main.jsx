@@ -28,6 +28,7 @@ function App() {
   const [stockEtat, setStockEtat] = useState('utilisable');
   const [stockEmplacement, setStockEmplacement] = useState('depot');
   const [stockCamionId, setStockCamionId] = useState('');
+  const [camions, setCamions] = useState([]);
   const [stockQuantite, setStockQuantite] = useState('');
   const [stockMessage, setStockMessage] = useState('');
   const [clientsLoading, setClientsLoading] = useState(false);
@@ -63,6 +64,7 @@ function App() {
     }
     loadClients();
     loadStockBouteilles();
+    loadCamions();
   }, [session]);
 
 
@@ -99,6 +101,24 @@ function App() {
       setMessage('Impossible de contacter Supabase pour charger les clients.');
     } finally { setClientsLoading(false); }
   }
+  
+async function loadCamions() {
+  if (!supabase || !session) return;
+
+  const { data, error } = await supabase
+    .from('camions')
+    .select('id, nom, format_kg, capacite, chauffeur')
+    .eq('actif', true)
+    .order('nom', { ascending: true });
+
+  if (error) {
+    console.error('Erreur chargement camions :', error.message);
+    return;
+  }
+
+  setCamions(data || []);
+}
+
   async function loadStockBouteilles() {
     if (!supabase || !session) return;
     setStockLoading(true);
@@ -122,49 +142,58 @@ function App() {
     }
   }
 
-  async function saveStockBouteilles(event) {
-    event.preventDefault();
+ 
+async function saveStockBouteilles(event) {
+  event.preventDefault();
 
-    if (!supabase || !session?.user?.id) {
-      setStockMessage('Vous devez être connecté pour enregistrer le stock.');
-      return;
-    }
-
-    const quantite = Number(stockQuantite);
-
-    if (!Number.isInteger(quantite) || quantite < 0 || stockQuantite.trim() === '') {
-      setStockMessage('Saisissez une quantité entière égale ou supérieure à zéro.');
-      return;
-    }
-
-    setStockLoading(true);
-    setStockMessage('');
-
-    try {
-      const { error } = await supabase
-        .from('stock_bouteilles')
-        .insert({
-          format_kg: Number(stockFormat),
-          contenu: stockContenu,
-          etat: stockEtat,
-          emplacement: stockEmplacement,
-          quantite,
-          created_by: session.user.id
-        });
-
-      if (error) {
-        setStockMessage('Enregistrement impossible : ' + error.message);
-      } else {
-        setStockMessage('La quantité de bouteilles a été enregistrée.');
-        setStockQuantite('');
-        await loadStockBouteilles();
-      }
-    } catch {
-      setStockMessage('Erreur lors de l’enregistrement du stock.');
-    } finally {
-      setStockLoading(false);
-    }
+  if (!supabase || !session?.user?.id) {
+    setStockMessage('Vous devez être connecté pour enregistrer le stock.');
+    return;
   }
+
+  const quantite = Number(stockQuantite);
+
+  if (!Number.isInteger(quantite) || quantite < 0 || stockQuantite.trim() === '') {
+    setStockMessage('Saisissez une quantité entière égale ou supérieure à zéro.');
+    return;
+  }
+
+  if (stockEmplacement === 'camion' && !stockCamionId) {
+    setStockMessage('Veuillez choisir le camion concerné.');
+    return;
+  }
+
+  setStockLoading(true);
+  setStockMessage('');
+
+  try {
+    const { error } = await supabase
+      .from('stock_bouteilles')
+      .insert({
+        format_kg: Number(stockFormat),
+        contenu: stockContenu,
+        etat: stockEtat,
+        emplacement: stockEmplacement,
+        camion_id: stockEmplacement === 'camion' ? stockCamionId : null,
+        client_id: null,
+        quantite,
+        created_by: session.user.id
+      });
+
+    if (error) {
+      setStockMessage('Enregistrement impossible : ' + error.message);
+    } else {
+      setStockMessage('La quantité de bouteilles a été enregistrée.');
+      setStockQuantite('');
+      setStockCamionId('');
+      await loadStockBouteilles();
+    }
+  } catch {
+    setStockMessage('Erreur lors de l’enregistrement du stock.');
+  } finally {
+    setStockLoading(false);
+  }
+}
 
   
   function updateField(event) {
