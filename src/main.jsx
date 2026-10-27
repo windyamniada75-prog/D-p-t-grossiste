@@ -27,6 +27,7 @@ function App() {
   const [stockContenu, setStockContenu] = useState('vide');
   const [stockEtat, setStockEtat] = useState('utilisable');
   const [stockEmplacement, setStockEmplacement] = useState('depot');
+  const [stockCamionId, setStockCamionId] = useState('');
   const [stockQuantite, setStockQuantite] = useState('');
   const [stockMessage, setStockMessage] = useState('');
   const [clientsLoading, setClientsLoading] = useState(false);
