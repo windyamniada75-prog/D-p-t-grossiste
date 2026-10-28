@@ -73,16 +73,21 @@ const [stockActionId, setStockActionId] = useState('');
   }, []);
 
  
-  useEffect(() => {
-    if (!session || !supabase) {
-      setClients([]);
-      setStockBouteilles([]);
-      return;
-    }
-    loadClients();
-    loadStockBouteilles();
-    loadCamions();
-  }, [session]);
+ 
+useEffect(() => {
+  if (!session || !supabase) {
+    setClients([]);
+    setStockBouteilles([]);
+    setInventaires([]);
+    return;
+  }
+
+  loadClients();
+  loadStockBouteilles();
+  loadCamions();
+  loadInventaires();
+}, [session]);
+
 
 
   async function handleLogin(event) {
