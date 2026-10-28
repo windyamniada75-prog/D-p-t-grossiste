@@ -736,6 +736,204 @@ async function saveStockBouteilles(event) {
             </section>
           </>}
 
+{page === 'inventaire' && <>
+  <h1 style={{ marginTop: 0 }}>Inventaire mensuel</h1>
+  <p style={{ color: '#64748b' }}>
+    Comparez le stock théorique aux quantités réellement comptées.
+  </p>
+
+  <section style={cardStyle}>
+    <h2 style={{ marginTop: 0 }}>Nouveau comptage</h2>
+
+    <form onSubmit={saveInventaire}>
+      <label>Date de l'inventaire</label>
+      <input
+        type="date"
+        value={inventaireDate}
+        onChange={e => setInventaireDate(e.target.value)}
+        required
+        style={inputStyle}
+      />
+
+      <label>Format</label>
+      <select
+        value={inventaireFormat}
+        onChange={e => setInventaireFormat(e.target.value)}
+        style={inputStyle}
+      >
+        <option value="6">6 kg</option>
+        <option value="12">12 kg</option>
+      </select>
+
+      <label>Contenu</label>
+      <select
+        value={inventaireContenu}
+        onChange={e => setInventaireContenu(e.target.value)}
+        style={inputStyle}
+      >
+        <option value="pleine">Pleine</option>
+        <option value="vide">Vide</option>
+      </select>
+
+      <label>État</label>
+      <select
+        value={inventaireEtat}
+        onChange={e => setInventaireEtat(e.target.value)}
+        style={inputStyle}
+      >
+        <option value="utilisable">Utilisable</option>
+        <option value="hors_service">Hors service</option>
+      </select>
+
+      <label>Emplacement</label>
+      <select
+        value={inventaireEmplacement}
+        onChange={e => setInventaireEmplacement(e.target.value)}
+        style={inputStyle}
+      >
+        <option value="depot">Dépôt principal</option>
+        <option value="camion">Camion</option>
+      </select>
+
+      {inventaireEmplacement === 'camion' && (
+        <>
+          <label>Camion</label>
+          <select
+            value={inventaireCamionId}
+            onChange={e => setInventaireCamionId(e.target.value)}
+            style={inputStyle}
+            required
+          >
+            <option value="">-- Choisir un camion --</option>
+            {camions.map(camion => (
+              <option key={camion.id} value={camion.id}>
+                {camion.nom}
+              </option>
+            ))}
+          </select>
+        </>
+      )}
+
+      <label>Quantité physique comptée</label>
+      <input
+        type="number"
+        min="0"
+        step="1"
+        value={inventaireQuantitePhysique}
+        onChange={e => setInventaireQuantitePhysique(e.target.value)}
+        placeholder="Ex. : 250"
+        required
+        style={inputStyle}
+      />
+
+      <label>Commentaire (facultatif)</label>
+      <textarea
+        value={inventaireCommentaire}
+        onChange={e => setInventaireCommentaire(e.target.value)}
+        placeholder="Expliquez éventuellement un écart"
+        style={inputStyle}
+      />
+
+      {inventaireMessage && (
+        <p role="status">{inventaireMessage}</p>
+      )}
+
+      <button
+        type="submit"
+        disabled={inventaireLoading}
+        style={buttonStyle}
+      >
+        {inventaireLoading ? 'Enregistrement…' : 'Enregistrer l’inventaire'}
+      </button>
+    </form>
+  </section>
+
+  <section style={cardStyle}>
+    <div style={{
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      flexWrap: 'wrap',
+      gap: 12
+    }}>
+      <h2 style={{ marginTop: 0 }}>Historique des inventaires</h2>
+      <button
+        type="button"
+        onClick={loadInventaires}
+        disabled={inventaireLoading}
+        style={buttonStyle}
+      >
+        Actualiser
+      </button>
+    </div>
+
+    {inventaireLoading ? (
+      <p>Chargement des inventaires…</p>
+    ) : inventaires.length === 0 ? (
+      <p style={{ color: '#64748b' }}>
+        Aucun inventaire enregistré.
+      </p>
+    ) : (
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{
+          width: '100%',
+          borderCollapse: 'collapse',
+          minWidth: 750
+        }}>
+          <thead>
+            <tr style={{ textAlign: 'left', background: '#eef5f1' }}>
+              <th style={{ padding: 10 }}>Date</th>
+              <th style={{ padding: 10 }}>Format</th>
+              <th style={{ padding: 10 }}>Contenu</th>
+              <th style={{ padding: 10 }}>État</th>
+              <th style={{ padding: 10 }}>Emplacement</th>
+              <th style={{ padding: 10 }}>Théorique</th>
+              <th style={{ padding: 10 }}>Physique</th>
+              <th style={{ padding: 10 }}>Écart</th>
+            </tr>
+          </thead>
+          <tbody>
+            {inventaires.map(item => {
+              const ecart =
+                Number(item.quantite_physique) -
+                Number(item.quantite_theorique);
+
+              return (
+                <tr key={item.id}>
+                  <td style={{ padding: 10 }}>
+                    {item.date_inventaire}
+                  </td>
+                  <td style={{ padding: 10 }}>{item.format_kg} kg</td>
+                  <td style={{ padding: 10 }}>{item.contenu}</td>
+                  <td style={{ padding: 10 }}>{item.etat}</td>
+                  <td style={{ padding: 10 }}>{item.emplacement}</td>
+                  <td style={{ padding: 10 }}>
+                    {item.quantite_theorique}
+                  </td>
+                  <td style={{ padding: 10 }}>
+                    {item.quantite_physique}
+                  </td>
+                  <td style={{
+                    padding: 10,
+                    fontWeight: 'bold',
+                    color: ecart < 0
+                      ? '#b91c1c'
+                      : ecart > 0
+                        ? '#166534'
+                        : '#334155'
+                  }}>
+                    {ecart > 0 ? '+' : ''}{ecart}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    )}
+  </section>
+</>}
+
 
         </main>
 
