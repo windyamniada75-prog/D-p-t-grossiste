@@ -159,6 +159,37 @@ async function loadCamions() {
     }
   }
 
+async function loadInventaires() {
+  if (!supabase || !session) return;
+
+  setInventaireLoading(true);
+  setInventaireMessage('');
+
+  try {
+    const { data, error } = await supabase
+      .from('inventaires_bouteilles')
+      .select(
+        'id, date_inventaire, format_kg, contenu, etat, emplacement, camion_id, client_id, quantite_theorique, quantite_physique, commentaire, created_at'
+      )
+      .order('date_inventaire', { ascending: false })
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      setInventaireMessage(
+        'Chargement des inventaires impossible : ' + error.message
+      );
+    } else {
+      setInventaires(data || []);
+    }
+  } catch {
+    setInventaireMessage(
+      'Impossible de contacter Supabase pour charger les inventaires.'
+    );
+  } finally {
+    setInventaireLoading(false);
+  }
+}
+
  
 async function saveStockBouteilles(event) {
   event.preventDefault();
