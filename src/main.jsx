@@ -296,8 +296,9 @@ async function saveStockBouteilles(event) {
     ['dashboard', 'Tableau de bord'],
     ['clients', 'Clients'],
     ['bouteilles', 'Bouteilles'],
+   ['inventaire', 'Inventaire'],
   ];
-  const otherModules = ['Bouteilles', 'Chauffeurs', 'Livraisons', 'Mouvements de stock', 'Comptabilité', 'Rations'];
+ const otherModules = ['Bouteilles', 'Inventaire', 'Chauffeurs', 'Livraisons', 'Mouvements de stock', 'Comptabilité', 'Rations'];
 
   function navigate(key) {
     setPage(key); setMessage('');
