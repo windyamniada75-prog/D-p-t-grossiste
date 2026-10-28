@@ -976,6 +976,21 @@ async function saveStockBouteilles(event) {
         <td style={{ padding: 10 }}>
           {item.commentaire || '—'}
         </td>
+        
+<td style={{ padding: 10 }}>
+  <button
+    type="button"
+    onClick={() => supprimerInventaire(item.id)}
+    disabled={inventaireLoading}
+    style={{
+      ...buttonStyle,
+      background: '#b91c1c'
+    }}
+  >
+    Supprimer
+  </button>
+</td>
+
       </tr>
     );
   })}
