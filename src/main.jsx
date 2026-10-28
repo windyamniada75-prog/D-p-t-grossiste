@@ -197,6 +197,40 @@ async function loadInventaires() {
   }
 }
 
+async function supprimerInventaire(id) {
+  const confirmation = window.confirm(
+    'Voulez-vous vraiment supprimer cet inventaire ? Cette action est irréversible.'
+  );
+
+  if (!confirmation) return;
+
+  if (!supabase || !session) {
+    setInventaireMessage('Vous devez être connecté.');
+    return;
+  }
+
+  setInventaireLoading(true);
+  setInventaireMessage('');
+
+  try {
+    const { error } = await supabase
+      .from('inventaires_bouteilles')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+
+    setInventaireMessage('Inventaire supprimé avec succès.');
+    await loadInventaires();
+  } catch (error) {
+    setInventaireMessage(
+      'Suppression impossible : ' + error.message
+    );
+  } finally {
+    setInventaireLoading(false);
+  }
+}
+
 
 async function saveInventaire(e) {
   e.preventDefault();
