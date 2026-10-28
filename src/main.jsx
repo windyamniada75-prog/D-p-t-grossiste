@@ -33,6 +33,7 @@ const [inventaireEtat, setInventaireEtat] = useState('utilisable');
 const [inventaireEmplacement, setInventaireEmplacement] = useState('depot');
 const [inventaireCamionId, setInventaireCamionId] = useState('');
 const [inventaireQuantitePhysique, setInventaireQuantitePhysique] = useState('');
+const [inventaireQuantiteTheorique, setInventaireQuantiteTheorique] = useState('');
 const [inventaireCommentaire, setInventaireCommentaire] = useState('');
 const [inventaireLoading, setInventaireLoading] = useState(false);
 const [inventaireMessage, setInventaireMessage] = useState('');
