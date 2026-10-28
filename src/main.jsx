@@ -348,7 +348,9 @@ async function saveStockBouteilles(event) {
 ].map(([title, description, ready, key]) => (
 
     
-<article key={title} style={cardStyle}><h3 style={{ marginTop: 0 }}>{title}</h3><p style={{ color: '#64748b', minHeight: 38 }}>{description}</p><button type="button" style={{ ...buttonStyle, background: ready || title === 'Bouteilles' ? '#176b45' : '#e2e8f0', color: ready || title === 'Bouteilles' ? '#fff' : '#475569' }} onClick={() => title === 'Bouteilles' ? navigate('bouteilles') : ready ? navigate('clients') : setMessage(`Le module « ${title} » sera développé dans une prochaine étape.`)}>{ready || title === 'Bouteilles' ? 'Ouvrir le module' : 'À développer'}</button></article>
+
+<article key={title} style={cardStyle}><h3 style={{ marginTop: 0 }}>{title}</h3><p style={{ color: '#64748b', minHeight: 38 }}>{description}</p><button type="button" style={{ ...buttonStyle, background: ready || title === 'Bouteilles' || title === 'Inventaire' ? '#176b45' : '#e2e8f0', color: ready || title === 'Bouteilles' || title === 'Inventaire' ? '#fff' : '#475569' }} onClick={() => title === 'Bouteilles' ? navigate('bouteilles') : title === 'Inventaire' ? navigate('inventaire') : ready ? navigate('clients') : setMessage(`Le module « ${title} » sera développé dans une prochaine étape.`)}>{ready || title === 'Bouteilles' || title === 'Inventaire' ? 'Ouvrir le module' : 'À développer'}</button></article>
+
 
               ))}
             </div>
