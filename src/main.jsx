@@ -24,6 +24,23 @@ function App() {
     const [stockBouteilles, setStockBouteilles] = useState([]);
   
 const [inventaires, setInventaires] = useState([]);
+  
+const [rations, setRations] = useState([]);
+const [rationDate, setRationDate] = useState(
+  new Date().toISOString().slice(0, 10)
+);
+const [rationChauffeurs] = useState([
+  'Razack',
+  'Régis',
+  'Issaka',
+  'Toussain'
+]);
+const [rationPresences, setRationPresences] = useState({});
+const [rationPaiements, setRationPaiements] = useState({});
+const [rationCommentaires, setRationCommentaires] = useState({});
+const [rationLoading, setRationLoading] = useState(false);
+const [rationMessage, setRationMessage] = useState('');
+
 const [inventaireDate, setInventaireDate] = useState(
   new Date().toISOString().slice(0, 10)
 );
