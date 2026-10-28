@@ -31,6 +31,7 @@ const [inventaireFormat, setInventaireFormat] = useState('6');
 const [inventaireContenu, setInventaireContenu] = useState('vide');
 const [inventaireEtat, setInventaireEtat] = useState('utilisable');
 const [inventaireEmplacement, setInventaireEmplacement] = useState('depot');
+const [inventaireCamionId, setInventaireCamionId] = useState('');
 const [inventaireQuantitePhysique, setInventaireQuantitePhysique] = useState('');
 const [inventaireCommentaire, setInventaireCommentaire] = useState('');
 const [inventaireLoading, setInventaireLoading] = useState(false);
@@ -184,6 +185,91 @@ async function loadInventaires() {
   } catch {
     setInventaireMessage(
       'Impossible de contacter Supabase pour charger les inventaires.'
+    );
+  } finally {
+    setInventaireLoading(false);
+  }
+}
+
+async function saveInventaire(e) {
+  e.preventDefault();
+
+  if (!supabase || !session) {
+    setInventaireMessage('Vous devez être connecté.');
+    return;
+  }
+
+  const quantitePhysique = Number(inventaireQuantitePhysique);
+
+  if (
+    inventaireQuantitePhysique === '' ||
+    !Number.isInteger(quantitePhysique) ||
+    quantitePhysique < 0
+  ) {
+    setInventaireMessage('Saisissez une quantité physique entière et positive ou égale à zéro.');
+    return;
+  }
+
+  if (inventaireEmplacement === 'camion' && !inventaireCamionId) {
+    setInventaireMessage('Choisissez le camion à inventorier.');
+    return;
+  }
+
+  setInventaireLoading(true);
+  setInventaireMessage('');
+
+  try {
+    let requete = supabase
+      .from('stock_bouteilles')
+      .select('quantite')
+      .eq('supprime', false)
+      .eq('format_kg', Number(inventaireFormat))
+      .eq('contenu', inventaireContenu)
+      .eq('etat', inventaireEtat)
+      .eq('emplacement', inventaireEmplacement);
+
+    if (inventaireEmplacement === 'camion') {
+      requete = requete.eq('camion_id', inventaireCamionId);
+    }
+
+    const { data: stock, error: stockError } = await requete;
+
+    if (stockError) throw stockError;
+
+    const quantiteTheorique = (stock || []).reduce(
+      (total, item) => total + Number(item.quantite || 0),
+      0
+    );
+
+    const { error } = await supabase
+      .from('inventaires_bouteilles')
+      .insert({
+        date_inventaire: inventaireDate,
+        format_kg: Number(inventaireFormat),
+        contenu: inventaireContenu,
+        etat: inventaireEtat,
+        emplacement: inventaireEmplacement,
+        camion_id: inventaireEmplacement === 'camion'
+          ? inventaireCamionId
+          : null,
+        client_id: null,
+        quantite_theorique: quantiteTheorique,
+        quantite_physique: quantitePhysique,
+        commentaire: inventaireCommentaire.trim() || null,
+        created_by: session.user.id
+      });
+
+    if (error) throw error;
+
+    setInventaireMessage(
+      `Inventaire enregistré. Écart : ${quantitePhysique - quantiteTheorique} bouteille(s).`
+    );
+    setInventaireQuantitePhysique('');
+    setInventaireCommentaire('');
+    await loadInventaires();
+  } catch (error) {
+    setInventaireMessage(
+      'Enregistrement impossible : ' + error.message
     );
   } finally {
     setInventaireLoading(false);
