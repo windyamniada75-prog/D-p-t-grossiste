@@ -899,55 +899,54 @@ async function saveStockBouteilles(event) {
           borderCollapse: 'collapse',
           minWidth: 750
         }}>
-          <thead>
-            <tr style={{ textAlign: 'left', background: '#eef5f1' }}>
-              <th style={{ padding: 10 }}>Date</th>
-              <th style={{ padding: 10 }}>Format</th>
-              <th style={{ padding: 10 }}>Contenu</th>
-              <th style={{ padding: 10 }}>État</th>
-              <th style={{ padding: 10 }}>Emplacement</th>
-              <th style={{ padding: 10 }}>Théorique</th>
-              <th style={{ padding: 10 }}>Physique</th>
-              <th style={{ padding: 10 }}>Écart</th>
-            </tr>
-          </thead>
-          <tbody>
-            {inventaires.map(item => {
-              const ecart =
-                Number(item.quantite_physique) -
-                Number(item.quantite_theorique);
+         
+<thead>
+  <tr style={{ textAlign: 'left', background: '#eef5f1' }}>
+    <th style={{ padding: 10 }}>Date</th>
+    <th style={{ padding: 10 }}>Format</th>
+    <th style={{ padding: 10 }}>Contenu</th>
+    <th style={{ padding: 10 }}>État</th>
+    <th style={{ padding: 10 }}>Emplacement</th>
+    <th style={{ padding: 10 }}>Théorique</th>
+    <th style={{ padding: 10 }}>Physique</th>
+    <th style={{ padding: 10 }}>Écart</th>
+    <th style={{ padding: 10 }}>Commentaire</th>
+  </tr>
+</thead>
+<tbody>
+  {inventaires.map(item => {
+    const ecart =
+      Number(item.quantite_physique) -
+      Number(item.quantite_theorique);
 
-              return (
-                <tr key={item.id}>
-                  <td style={{ padding: 10 }}>
-                    {item.date_inventaire}
-                  </td>
-                  <td style={{ padding: 10 }}>{item.format_kg} kg</td>
-                  <td style={{ padding: 10 }}>{item.contenu}</td>
-                  <td style={{ padding: 10 }}>{item.etat}</td>
-                  <td style={{ padding: 10 }}>{item.emplacement}</td>
-                  <td style={{ padding: 10 }}>
-                    {item.quantite_theorique}
-                  </td>
-                  <td style={{ padding: 10 }}>
-                    {item.quantite_physique}
-                  </td>
-                  <td style={{
-                    padding: 10,
-                    fontWeight: 'bold',
-                    color: ecart < 0
-                      ? '#b91c1c'
-                      : ecart > 0
-                        ? '#166534'
-                        : '#334155'
-                  }}>
-                    {ecart > 0 ? '+' : ''}{ecart}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+    return (
+      <tr key={item.id}>
+        <td style={{ padding: 10 }}>{item.date_inventaire}</td>
+        <td style={{ padding: 10 }}>{item.format_kg} kg</td>
+        <td style={{ padding: 10 }}>{item.contenu}</td>
+        <td style={{ padding: 10 }}>{item.etat}</td>
+        <td style={{ padding: 10 }}>{item.emplacement}</td>
+        <td style={{ padding: 10 }}>{item.quantite_theorique}</td>
+        <td style={{ padding: 10 }}>{item.quantite_physique}</td>
+        <td style={{
+          padding: 10,
+          fontWeight: 'bold',
+          color: ecart < 0
+            ? '#b91c1c'
+            : ecart > 0
+              ? '#166534'
+              : '#334155'
+        }}>
+          {ecart > 0 ? '+' : ''}{ecart}
+        </td>
+        <td style={{ padding: 10 }}>
+          {item.commentaire || '—'}
+        </td>
+      </tr>
+    );
+  })}
+</tbody>
+
       </div>
     )}
   </section>
