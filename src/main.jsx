@@ -22,6 +22,20 @@ function App() {
   const [page, setPage] = useState('dashboard');
   const [clients, setClients] = useState([]);
     const [stockBouteilles, setStockBouteilles] = useState([]);
+  
+const [inventaires, setInventaires] = useState([]);
+const [inventaireDate, setInventaireDate] = useState(
+  new Date().toISOString().slice(0, 10)
+);
+const [inventaireFormat, setInventaireFormat] = useState('6');
+const [inventaireContenu, setInventaireContenu] = useState('vide');
+const [inventaireEtat, setInventaireEtat] = useState('utilisable');
+const [inventaireEmplacement, setInventaireEmplacement] = useState('depot');
+const [inventaireQuantitePhysique, setInventaireQuantitePhysique] = useState('');
+const [inventaireCommentaire, setInventaireCommentaire] = useState('');
+const [inventaireLoading, setInventaireLoading] = useState(false);
+const [inventaireMessage, setInventaireMessage] = useState('');
+
   const [stockLoading, setStockLoading] = useState(false);
   const [stockFormat, setStockFormat] = useState('6');
   const [stockContenu, setStockContenu] = useState('vide');
