@@ -819,17 +819,43 @@ async function saveStockBouteilles(event) {
         </>
       )}
 
-      <label>Quantité physique comptée</label>
-      <input
-        type="number"
-        min="0"
-        step="1"
-        value={inventaireQuantitePhysique}
-        onChange={e => setInventaireQuantitePhysique(e.target.value)}
-        placeholder="Ex. : 250"
-        required
-        style={inputStyle}
-      />
+    
+<label>Stock théorique</label>
+<input
+  type="number"
+  value={(() => {
+    const stockTheorique = stockBouteilles
+      .filter(item =>
+        !item.supprime &&
+        Number(item.format_kg) === Number(inventaireFormat) &&
+        item.contenu === inventaireContenu &&
+        item.etat === inventaireEtat &&
+        item.emplacement === inventaireEmplacement &&
+        (
+          inventaireEmplacement !== 'camion' ||
+          item.camion_id === inventaireCamionId
+        )
+      )
+      .reduce((total, item) => total + Number(item.quantite || 0), 0);
+
+    return stockTheorique;
+  })()}
+  readOnly
+  style={inputStyle}
+/>
+
+<label>Quantité physique comptée</label>
+<input
+  type="number"
+  min="0"
+  step="1"
+  value={inventaireQuantitePhysique}
+  onChange={e => setInventaireQuantitePhysique(e.target.value)}
+  placeholder="Ex. : 250"
+  required
+  style={inputStyle}
+/>
+
 
       <label>Commentaire (facultatif)</label>
       <textarea
