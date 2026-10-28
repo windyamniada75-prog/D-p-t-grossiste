@@ -197,6 +197,7 @@ async function loadInventaires() {
   }
 }
 
+
 async function saveInventaire(e) {
   e.preventDefault();
 
@@ -205,14 +206,28 @@ async function saveInventaire(e) {
     return;
   }
 
+  const quantiteTheorique = Number(inventaireQuantiteTheorique);
   const quantitePhysique = Number(inventaireQuantitePhysique);
+
+  if (
+    inventaireQuantiteTheorique === '' ||
+    !Number.isInteger(quantiteTheorique) ||
+    quantiteTheorique < 0
+  ) {
+    setInventaireMessage(
+      'Saisissez un stock théorique entier et positif ou égal à zéro.'
+    );
+    return;
+  }
 
   if (
     inventaireQuantitePhysique === '' ||
     !Number.isInteger(quantitePhysique) ||
     quantitePhysique < 0
   ) {
-    setInventaireMessage('Saisissez une quantité physique entière et positive ou égale à zéro.');
+    setInventaireMessage(
+      'Saisissez une quantité physique entière et positive ou égale à zéro.'
+    );
     return;
   }
 
@@ -225,28 +240,6 @@ async function saveInventaire(e) {
   setInventaireMessage('');
 
   try {
-    let requete = supabase
-      .from('stock_bouteilles')
-      .select('quantite')
-      .eq('supprime', false)
-      .eq('format_kg', Number(inventaireFormat))
-      .eq('contenu', inventaireContenu)
-      .eq('etat', inventaireEtat)
-      .eq('emplacement', inventaireEmplacement);
-
-    if (inventaireEmplacement === 'camion') {
-      requete = requete.eq('camion_id', inventaireCamionId);
-    }
-
-    const { data: stock, error: stockError } = await requete;
-
-    if (stockError) throw stockError;
-
-    const quantiteTheorique = (stock || []).reduce(
-      (total, item) => total + Number(item.quantite || 0),
-      0
-    );
-
     const { error } = await supabase
       .from('inventaires_bouteilles')
       .insert({
@@ -270,8 +263,11 @@ async function saveInventaire(e) {
     setInventaireMessage(
       `Inventaire enregistré. Écart : ${quantitePhysique - quantiteTheorique} bouteille(s).`
     );
+
+    setInventaireQuantiteTheorique('');
     setInventaireQuantitePhysique('');
     setInventaireCommentaire('');
+
     await loadInventaires();
   } catch (error) {
     setInventaireMessage(
@@ -281,6 +277,7 @@ async function saveInventaire(e) {
     setInventaireLoading(false);
   }
 }
+
 
  
 async function saveStockBouteilles(event) {
