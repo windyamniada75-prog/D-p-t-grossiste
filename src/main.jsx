@@ -945,9 +945,12 @@ async function saveStockBouteilles(event) {
       </tr>
     );
   })}
+
 </tbody>
+</table>
 
       </div>
+
     )}
   </section>
 </>}
