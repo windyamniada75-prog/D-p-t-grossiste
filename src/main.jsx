@@ -1351,6 +1351,7 @@ const navItems = [
               <th style={{ padding: 10 }}>Montant payé</th>
               <th style={{ padding: 10 }}>Reste à payer</th>
               <th style={{ padding: 10 }}>Commentaire</th>
+              <th style={{ padding: 10 }}>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -1380,6 +1381,19 @@ const navItems = [
                 <td style={{ padding: 10 }}>
                   {item.commentaire || '—'}
                 </td>
+                <td style={{ padding: 10 }}>
+  <button
+    type="button"
+    onClick={() => supprimerRation(item.id)}
+    disabled={rationLoading}
+    style={{
+      ...buttonStyle,
+      background: '#b91c1c'
+    }}
+  >
+    Supprimer
+  </button>
+</td>
               </tr>
             ))}
           </tbody>
