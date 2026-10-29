@@ -36,9 +36,11 @@ const [employeLoading, setEmployeLoading] = useState(false);
 const [rationDate, setRationDate] = useState(
   new Date().toISOString().slice(0, 10)
 );
+
 const rationChauffeurs = employes
   .filter(employe => employe.actif)
-  .map(employe => employe.nom);'
+  .map(employe => employe.nom);
+
 ]);
 const [rationPresences, setRationPresences] = useState({});
 const [rationPaiements, setRationPaiements] = useState({});
