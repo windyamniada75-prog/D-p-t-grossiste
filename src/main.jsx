@@ -1587,9 +1587,29 @@ const navItems = [
                 <td style={{ padding: 10 }}>
                   {employe.fonction || '—'}
                 </td>
-                <td style={{ padding: 10 }}>
-                  {employe.actif ? 'Actif' : 'Inactif'}
-                </td>
+               
+<td style={{ padding: 10 }}>
+  <span style={{
+    color: employe.actif ? '#15803d' : '#b91c1c',
+    fontWeight: 'bold'
+  }}>
+    {employe.actif ? 'Actif' : 'Inactif'}
+  </span>
+
+  <button
+    type="button"
+    onClick={() => basculerStatutEmploye(employe)}
+    disabled={employeLoading}
+    style={{
+      ...buttonStyle,
+      marginLeft: 10,
+      padding: '6px 10px'
+    }}
+  >
+    {employe.actif ? 'Désactiver' : 'Réactiver'}
+  </button>
+</td>
+
               </tr>
             ))}
           </tbody>
