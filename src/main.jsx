@@ -100,12 +100,14 @@ const [stockActionId, setStockActionId] = useState('');
  
  
 
+
 useEffect(() => {
   if (!session || !supabase) {
     setClients([]);
     setStockBouteilles([]);
     setInventaires([]);
     setRations([]);
+    setEmployes([]);
     return;
   }
 
@@ -114,7 +116,9 @@ useEffect(() => {
   loadCamions();
   loadInventaires();
   loadRations();
+  loadEmployes();
 }, [session]);
+
 
 
 
