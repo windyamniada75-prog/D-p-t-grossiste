@@ -306,6 +306,47 @@ async function saveRations(e) {
   }
 }
 
+async function supprimerRation(id) {
+  const confirmation = window.confirm(
+    'Voulez-vous vraiment supprimer cet enregistrement de ration ?'
+  );
+
+  if (!confirmation) return;
+
+  if (!supabase || !session) {
+    setRationMessage('Connectez-vous pour supprimer cet enregistrement.');
+    return;
+  }
+
+  setRationLoading(true);
+  setRationMessage('');
+
+  try {
+    const { error } = await supabase
+      .from('rations_journalieres')
+      .delete()
+      .eq('id', id)
+      .eq('created_by', session.user.id);
+
+    if (error) {
+      setRationMessage(
+        'Suppression impossible : ' + error.message
+      );
+      return;
+    }
+
+    setRationMessage('Enregistrement supprimé.');
+    await loadRations();
+  } catch {
+    setRationMessage(
+      'Une erreur est survenue pendant la suppression.'
+    );
+  } finally {
+    setRationLoading(false);
+  }
+}
+
+  
 async function supprimerInventaire(id) {
   const confirmation = window.confirm(
     'Voulez-vous vraiment supprimer cet inventaire ? Cette action est irréversible.'
