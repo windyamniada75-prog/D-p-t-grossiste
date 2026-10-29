@@ -288,6 +288,56 @@ async function loadEmployes() {
   }
 }
 
+async function saveEmploye(e) {
+  e.preventDefault();
+
+  if (!supabase || !session) {
+    setEmployeMessage('Connectez-vous pour enregistrer un employé.');
+    return;
+  }
+
+  const nom = employeNom.trim();
+  const fonction = employeFonction.trim();
+
+  if (!nom) {
+    setEmployeMessage('Veuillez saisir le nom de l’employé.');
+    return;
+  }
+
+  setEmployeLoading(true);
+  setEmployeMessage('');
+
+  try {
+    const { error } = await supabase
+      .from('employes')
+      .insert({
+        nom,
+        fonction: fonction || null,
+        actif: true,
+        created_by: session.user.id
+      });
+
+    if (error) {
+      setEmployeMessage(
+        'Enregistrement impossible : ' + error.message
+      );
+      return;
+    }
+
+    setEmployeNom('');
+    setEmployeFonction('');
+    setEmployeMessage('Employé ajouté avec succès.');
+
+    await loadEmployes();
+  } catch {
+    setEmployeMessage(
+      'Une erreur est survenue pendant l’enregistrement.'
+    );
+  } finally {
+    setEmployeLoading(false);
+  }
+}
+
 async function saveRations(e) {
   e.preventDefault();
 
