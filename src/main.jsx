@@ -26,6 +26,13 @@ function App() {
 const [inventaires, setInventaires] = useState([]);
   
 const [rations, setRations] = useState([]);
+  
+const [employes, setEmployes] = useState([]);
+const [employeNom, setEmployeNom] = useState('');
+const [employeFonction, setEmployeFonction] = useState('');
+const [employeMessage, setEmployeMessage] = useState('');
+const [employeLoading, setEmployeLoading] = useState(false);
+
 const [rationDate, setRationDate] = useState(
   new Date().toISOString().slice(0, 10)
 );
