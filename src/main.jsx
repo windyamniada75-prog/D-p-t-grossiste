@@ -256,6 +256,34 @@ async function loadRations() {
   }
 }
 
+async function loadEmployes() {
+  if (!supabase || !session) return;
+
+  setEmployeLoading(true);
+  setEmployeMessage('');
+
+  try {
+    const { data, error } = await supabase
+      .from('employes')
+      .select('id, nom, fonction, actif, created_at')
+      .order('nom', { ascending: true });
+
+    if (error) {
+      setEmployeMessage(
+        'Chargement des employés impossible : ' + error.message
+      );
+    } else {
+      setEmployes(data || []);
+    }
+  } catch {
+    setEmployeMessage(
+      'Impossible de contacter Supabase pour charger les employés.'
+    );
+  } finally {
+    setEmployeLoading(false);
+  }
+}
+
 async function saveRations(e) {
   e.preventDefault();
 
