@@ -1492,6 +1492,110 @@ const navItems = [
   </section>
 </>}
 
+{page === 'employes' && <>
+  <h1 style={{ marginTop: 0 }}>Gestion des employés</h1>
+  <p style={{ color: '#64748b' }}>
+    Ajoutez les employés du dépôt et gérez leur statut.
+  </p>
+
+  <section style={cardStyle}>
+    <h2 style={{ marginTop: 0 }}>Ajouter un employé</h2>
+
+    <form onSubmit={saveEmploye}>
+      <label>Nom complet</label>
+      <input
+        type="text"
+        value={employeNom}
+        onChange={e => setEmployeNom(e.target.value)}
+        placeholder="Ex. : Amadou Ouédraogo"
+        required
+        style={inputStyle}
+      />
+
+      <label>Fonction</label>
+      <input
+        type="text"
+        value={employeFonction}
+        onChange={e => setEmployeFonction(e.target.value)}
+        placeholder="Ex. : Chauffeur, manutentionnaire..."
+        style={inputStyle}
+      />
+
+      {employeMessage && (
+        <p role="status">{employeMessage}</p>
+      )}
+
+      <button
+        type="submit"
+        disabled={employeLoading}
+        style={buttonStyle}
+      >
+        {employeLoading ? 'Enregistrement…' : 'Ajouter l’employé'}
+      </button>
+    </form>
+  </section>
+
+  <section style={cardStyle}>
+    <div style={{
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      flexWrap: 'wrap',
+      gap: 12
+    }}>
+      <h2 style={{ marginTop: 0 }}>Liste des employés</h2>
+      <button
+        type="button"
+        onClick={loadEmployes}
+        disabled={employeLoading}
+        style={buttonStyle}
+      >
+        Actualiser
+      </button>
+    </div>
+
+    {employeLoading ? (
+      <p>Chargement des employés…</p>
+    ) : employes.length === 0 ? (
+      <p style={{ color: '#64748b' }}>
+        Aucun employé enregistré pour le moment.
+      </p>
+    ) : (
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{
+          width: '100%',
+          borderCollapse: 'collapse',
+          minWidth: 500
+        }}>
+          <thead>
+            <tr style={{
+              textAlign: 'left',
+              background: '#eef5f1'
+            }}>
+              <th style={{ padding: 10 }}>Nom</th>
+              <th style={{ padding: 10 }}>Fonction</th>
+              <th style={{ padding: 10 }}>Statut</th>
+            </tr>
+          </thead>
+          <tbody>
+            {employes.map(employe => (
+              <tr key={employe.id}>
+                <td style={{ padding: 10 }}>{employe.nom}</td>
+                <td style={{ padding: 10 }}>
+                  {employe.fonction || '—'}
+                </td>
+                <td style={{ padding: 10 }}>
+                  {employe.actif ? 'Actif' : 'Inactif'}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )}
+  </section>
+</>}
+
           
         </main>
 
