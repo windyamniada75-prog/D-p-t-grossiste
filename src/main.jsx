@@ -249,6 +249,63 @@ async function loadRations() {
   }
 }
 
+async function saveRations(e) {
+  e.preventDefault();
+
+  if (!supabase || !session) {
+    setRationMessage('Connectez-vous pour enregistrer les rations.');
+    return;
+  }
+
+  setRationLoading(true);
+  setRationMessage('');
+
+  try {
+    const lignes = rationChauffeurs.map(chauffeur => {
+      const present = Boolean(rationPresences[chauffeur]);
+      const montant_du = present ? 500 : 0;
+      const montant_paye = present
+        ? Math.min(
+            montant_du,
+            Math.max(0, Number(rationPaiements[chauffeur] || 0))
+          )
+        : 0;
+
+      return {
+        date_ration: rationDate,
+        chauffeur,
+        present,
+        montant_du,
+        montant_paye,
+        commentaire: rationCommentaires[chauffeur] || null,
+        created_by: session.user.id
+      };
+    });
+
+    const { error } = await supabase
+      .from('rations_journalieres')
+      .upsert(lignes, {
+        onConflict: 'date_ration,chauffeur,created_by'
+      });
+
+    if (error) {
+      setRationMessage(
+        'Enregistrement impossible : ' + error.message
+      );
+      return;
+    }
+
+    setRationMessage('Présences et rations enregistrées avec succès.');
+    await loadRations();
+  } catch {
+    setRationMessage(
+      'Une erreur est survenue pendant l’enregistrement.'
+    );
+  } finally {
+    setRationLoading(false);
+  }
+}
+
 async function supprimerInventaire(id) {
   const confirmation = window.confirm(
     'Voulez-vous vraiment supprimer cet inventaire ? Cette action est irréversible.'
