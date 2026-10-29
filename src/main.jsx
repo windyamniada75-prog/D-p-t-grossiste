@@ -1344,13 +1344,19 @@ const navItems = [
 
     <form onSubmit={saveRations}>
       <label>Date des rations</label>
-      <input
-        type="date"
-        value={rationDate}
-        onChange={e => setRationDate(e.target.value)}
-        required
-        style={inputStyle}
-      />
+      
+<input
+  type="date"
+  value={rationDate}
+  onChange={e => {
+    const date = e.target.value;
+    setRationDate(date);
+    chargerRationsDuJour(date);
+  }}
+  required
+  style={inputStyle}
+/>
+
 
       {rationChauffeurs.map(chauffeur => (
         <div
