@@ -214,6 +214,37 @@ async function loadInventaires() {
   }
 }
 
+async function loadRations() {
+  if (!supabase || !session) return;
+
+  setRationLoading(true);
+  setRationMessage('');
+
+  try {
+    const { data, error } = await supabase
+      .from('rations_journalieres')
+      .select(
+        'id, date_ration, chauffeur, present, montant_du, montant_paye, commentaire, created_at'
+      )
+      .order('date_ration', { ascending: false })
+      .order('chauffeur', { ascending: true });
+
+    if (error) {
+      setRationMessage(
+        'Chargement des rations impossible : ' + error.message
+      );
+    } else {
+      setRations(data || []);
+    }
+  } catch {
+    setRationMessage(
+      'Impossible de contacter Supabase pour charger les rations.'
+    );
+  } finally {
+    setRationLoading(false);
+  }
+}
+
 async function supprimerInventaire(id) {
   const confirmation = window.confirm(
     'Voulez-vous vraiment supprimer cet inventaire ? Cette action est irréversible.'
