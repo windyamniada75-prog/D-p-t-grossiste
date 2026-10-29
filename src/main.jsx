@@ -260,6 +260,48 @@ async function loadRations() {
   }
 }
 
+async function chargerRationsDuJour(date) {
+  if (!supabase || !session || !date) return;
+
+  setRationLoading(true);
+  setRationMessage('');
+
+  try {
+    const { data, error } = await supabase
+      .from('rations_journalieres')
+      .select('chauffeur, present, montant_paye, commentaire')
+      .eq('date_ration', date);
+
+    if (error) {
+      setRationMessage(
+        'Chargement des données du jour impossible : ' + error.message
+      );
+      return;
+    }
+
+    const presences = {};
+    const paiements = {};
+    const commentaires = {};
+
+    (data || []).forEach(item => {
+      presences[item.chauffeur] = item.present;
+      paiements[item.chauffeur] = item.montant_paye;
+      commentaires[item.chauffeur] = item.commentaire || '';
+    });
+
+    setRationPresences(presences);
+    setRationPaiements(paiements);
+    setRationCommentaires(commentaires);
+  } catch {
+    setRationMessage(
+      'Impossible de charger les données du jour.'
+    );
+  } finally {
+    setRationLoading(false);
+  }
+}
+
+  
 async function loadEmployes() {
   if (!supabase || !session) return;
 
