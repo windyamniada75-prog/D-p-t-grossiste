@@ -41,7 +41,6 @@ const rationChauffeurs = employes
   .filter(employe => employe.actif)
   .map(employe => employe.nom);
 
-]);
 const [rationPresences, setRationPresences] = useState({});
 const [rationPaiements, setRationPaiements] = useState({});
 const [rationCommentaires, setRationCommentaires] = useState({});
