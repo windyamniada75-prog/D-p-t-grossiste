@@ -1117,6 +1117,149 @@ const navItems = [
 </>}
 
 
+{page === 'rations' && <>
+  <h1 style={{ marginTop: 0 }}>Gestion des rations</h1>
+  <p style={{ color: '#64748b' }}>
+    Chaque chauffeur présent reçoit une ration de 500 FCFA par jour.
+  </p>
+
+  <section style={cardStyle}>
+    <h2 style={{ marginTop: 0 }}>Présences quotidiennes</h2>
+
+    <form onSubmit={saveRations}>
+      <label>Date des rations</label>
+      <input
+        type="date"
+        value={rationDate}
+        onChange={e => setRationDate(e.target.value)}
+        required
+        style={inputStyle}
+      />
+
+      {rationChauffeurs.map(chauffeur => (
+        <div
+          key={chauffeur}
+          style={{
+            border: '1px solid #e2e8f0',
+            borderRadius: 8,
+            padding: 12,
+            marginTop: 12
+          }}
+        >
+          <label style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            fontWeight: 'bold'
+          }}>
+            <input
+              type="checkbox"
+              checked={Boolean(rationPresences[chauffeur])}
+              onChange={e => {
+                const present = e.target.checked;
+                setRationPresences(prev => ({
+                  ...prev,
+                  [chauffeur]: present
+                }));
+                if (!present) {
+                  setRationPaiements(prev => ({
+                    ...prev,
+                    [chauffeur]: 0
+                  }));
+                }
+              }}
+            />
+            {chauffeur} — {rationPresences[chauffeur] ? 'Présent' : 'Absent'}
+          </label>
+
+          <p style={{ marginBottom: 8 }}>
+            Montant dû : {rationPresences[chauffeur] ? 500 : 0} FCFA
+          </p>
+
+          <label>Montant payé (FCFA)</label>
+          <input
+            type="number"
+            min="0"
+            max={rationPresences[chauffeur] ? 500 : 0}
+            step="1"
+            value={rationPaiements[chauffeur] || 0}
+            onChange={e => setRationPaiements(prev => ({
+              ...prev,
+              [chauffeur]: e.target.value
+            }))}
+            disabled={!rationPresences[chauffeur]}
+            style={inputStyle}
+          />
+
+          <label>Commentaire (facultatif)</label>
+          <input
+            type="text"
+            value={rationCommentaires[chauffeur] || ''}
+            onChange={e => setRationCommentaires(prev => ({
+              ...prev,
+              [chauffeur]: e.target.value
+            }))}
+            placeholder="Ex. : paiement en attente"
+            style={inputStyle}
+          />
+        </div>
+      ))}
+
+      <div style={{
+        marginTop: 16,
+        padding: 12,
+        background: '#eef5f1',
+        borderRadius: 8
+      }}>
+        <p>
+          <strong>Total dû :</strong>{' '}
+          {rationChauffeurs.reduce(
+            (total, chauffeur) =>
+              total + (rationPresences[chauffeur] ? 500 : 0),
+            0
+          )} FCFA
+        </p>
+        <p>
+          <strong>Total payé :</strong>{' '}
+          {rationChauffeurs.reduce(
+            (total, chauffeur) =>
+              total + (
+                rationPresences[chauffeur]
+                  ? Math.min(500, Math.max(0, Number(rationPaiements[chauffeur] || 0)))
+                  : 0
+              ),
+            0
+          )} FCFA
+        </p>
+        <p>
+          <strong>Reste à payer :</strong>{' '}
+          {rationChauffeurs.reduce(
+            (total, chauffeur) =>
+              total + (
+                rationPresences[chauffeur]
+                  ? 500 - Math.min(500, Math.max(0, Number(rationPaiements[chauffeur] || 0)))
+                  : 0
+              ),
+            0
+          )} FCFA
+        </p>
+      </div>
+
+      {rationMessage && (
+        <p role="status">{rationMessage}</p>
+      )}
+
+      <button
+        type="submit"
+        disabled={rationLoading}
+        style={buttonStyle}
+      >
+        {rationLoading ? 'Enregistrement…' : 'Enregistrer les rations'}
+      </button>
+    </form>
+  </section>
+</>}
+
         </main>
 
       </div>
