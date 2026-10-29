@@ -700,13 +700,16 @@ async function saveStockBouteilles(event) {
   );
 
   
+
 const navItems = [
   ['dashboard', 'Tableau de bord'],
   ['clients', 'Clients'],
   ['bouteilles', 'Bouteilles'],
   ['inventaire', 'Inventaire'],
   ['rations', 'Rations'],
+  ['employes', 'Employés'],
 ];
+
 
  const otherModules = ['Bouteilles', 'Inventaire', 'Chauffeurs', 'Livraisons', 'Mouvements de stock', 'Comptabilité', 'Rations'];
 
