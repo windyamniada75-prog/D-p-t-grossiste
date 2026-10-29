@@ -1260,6 +1260,95 @@ const navItems = [
   </section>
 </>}
 
+{page === 'rations' && <>
+  <section style={cardStyle}>
+    <div style={{
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      flexWrap: 'wrap',
+      gap: 12
+    }}>
+      <h2 style={{ marginTop: 0 }}>Historique des rations</h2>
+
+      <button
+        type="button"
+        onClick={loadRations}
+        disabled={rationLoading}
+        style={buttonStyle}
+      >
+        {rationLoading ? 'Chargement…' : 'Actualiser'}
+      </button>
+    </div>
+
+    {rationMessage && (
+      <p role="status">{rationMessage}</p>
+    )}
+
+    {rationLoading ? (
+      <p>Chargement de l’historique…</p>
+    ) : rations.length === 0 ? (
+      <p style={{ color: '#64748b' }}>
+        Aucun enregistrement trouvé. Clique sur Actualiser pour vérifier.
+      </p>
+    ) : (
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{
+          width: '100%',
+          borderCollapse: 'collapse',
+          minWidth: 800
+        }}>
+          <thead>
+            <tr style={{
+              textAlign: 'left',
+              background: '#eef5f1'
+            }}>
+              <th style={{ padding: 10 }}>Date</th>
+              <th style={{ padding: 10 }}>Chauffeur</th>
+              <th style={{ padding: 10 }}>Présence</th>
+              <th style={{ padding: 10 }}>Montant dû</th>
+              <th style={{ padding: 10 }}>Montant payé</th>
+              <th style={{ padding: 10 }}>Reste à payer</th>
+              <th style={{ padding: 10 }}>Commentaire</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rations.map(item => (
+              <tr key={item.id}>
+                <td style={{ padding: 10 }}>
+                  {item.date_ration}
+                </td>
+                <td style={{ padding: 10 }}>
+                  {item.chauffeur}
+                </td>
+                <td style={{ padding: 10 }}>
+                  {item.present ? 'Présent' : 'Absent'}
+                </td>
+                <td style={{ padding: 10 }}>
+                  {Number(item.montant_du).toLocaleString('fr-FR')} FCFA
+                </td>
+                <td style={{ padding: 10 }}>
+                  {Number(item.montant_paye).toLocaleString('fr-FR')} FCFA
+                </td>
+                <td style={{ padding: 10 }}>
+                  {(
+                    Number(item.montant_du) -
+                    Number(item.montant_paye)
+                  ).toLocaleString('fr-FR')} FCFA
+                </td>
+                <td style={{ padding: 10 }}>
+                  {item.commentaire || '—'}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )}
+  </section>
+</>}
+
+          
         </main>
 
       </div>
