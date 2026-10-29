@@ -338,6 +338,47 @@ async function saveEmploye(e) {
   }
 }
 
+async function basculerStatutEmploye(employe) {
+  if (!supabase || !session) {
+    setEmployeMessage('Connectez-vous pour modifier le statut.');
+    return;
+  }
+
+  const nouveauStatut = !employe.actif;
+
+  setEmployeLoading(true);
+  setEmployeMessage('');
+
+  try {
+    const { error } = await supabase
+      .from('employes')
+      .update({ actif: nouveauStatut })
+      .eq('id', employe.id)
+      .eq('created_by', session.user.id);
+
+    if (error) {
+      setEmployeMessage(
+        'Modification impossible : ' + error.message
+      );
+      return;
+    }
+
+    setEmployeMessage(
+      nouveauStatut
+        ? 'Employé réactivé avec succès.'
+        : 'Employé désactivé avec succès.'
+    );
+
+    await loadEmployes();
+  } catch {
+    setEmployeMessage(
+      'Une erreur est survenue pendant la modification.'
+    );
+  } finally {
+    setEmployeLoading(false);
+  }
+}
+
 async function saveRations(e) {
   e.preventDefault();
 
