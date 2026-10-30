@@ -37,6 +37,15 @@ const [rationDate, setRationDate] = useState(
   new Date().toISOString().slice(0, 10)
 );
 
+const rationMois = rationDate.slice(0, 7);
+
+const totalRationsMois = rations
+  .filter(item =>
+    item.date_ration?.slice(0, 7) === rationMois &&
+    item.present
+  )
+  .reduce((total, item) => total + Number(item.montant_du || 0), 0);
+
 const rationChauffeurs = employes
   .filter(employe => employe.actif)
   .map(employe => employe.nom);
