@@ -1501,6 +1501,24 @@ const navItems = [
     }}>
       <h2 style={{ marginTop: 0 }}>Historique des rations</h2>
 
+<div style={{
+  background: '#eef5f1',
+  border: '1px solid #cbd5e1',
+  borderRadius: 10,
+  padding: 16,
+  marginBottom: 16
+}}>
+  <p style={{ margin: 0, color: '#475569' }}>
+    Total des rations du mois
+  </p>
+  <h2 style={{ margin: '8px 0 0', color: '#166534' }}>
+    {totalRationsMois.toLocaleString('fr-FR')} FCFA
+  </h2>
+  <p style={{ margin: '6px 0 0', color: '#64748b' }}>
+    Mois : {rationMois}
+  </p>
+</div>
+
       <button
         type="button"
         onClick={loadRations}
