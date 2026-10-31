@@ -119,17 +119,18 @@ useEffect(() => {
     setInventaires([]);
     setRations([]);
     setEmployes([]);
+    setTournees([]);
     return;
   }
 
   loadClients();
   loadStockBouteilles();
   loadCamions();
+  loadTournees();
   loadInventaires();
   loadRations();
   loadEmployes();
 }, [session]);
-
 
 
 
@@ -185,6 +186,38 @@ async function loadCamions() {
   setCamions(data || []);
 }
 
+  async function loadTournees() {
+  if (!supabase || !session) return;
+
+  setTourneeLoading(true);
+
+  const { data, error } = await supabase
+    .from('tournees')
+    .select(`
+      id,
+      date_tournee,
+      camion_id,
+      chauffeur,
+      bouteilles_pleines_depart,
+      bouteilles_pleines_livrees,
+      bouteilles_vides_recuperees,
+      bouteilles_vides_retour,
+      commentaire,
+      created_at
+    `)
+    .order('date_tournee', { ascending: false });
+
+  if (error) {
+    console.error('Erreur chargement tournées :', error.message);
+    setTourneeMessage('Impossible de charger les tournées.');
+    setTourneeLoading(false);
+    return;
+  }
+
+  setTournees(data || []);
+  setTourneeLoading(false);
+}
+  
   async function loadStockBouteilles() {
     if (!supabase || !session) return;
     setStockLoading(true);
