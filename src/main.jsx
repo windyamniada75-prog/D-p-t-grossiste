@@ -799,6 +799,7 @@ const navItems = [
   ['inventaire', 'Inventaire'],
   ['rations', 'Rations'],
   ['employes', 'Employés'],
+  ['tournees', 'Livraisons'],
 ];
 
 
