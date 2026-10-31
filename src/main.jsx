@@ -2066,6 +2066,52 @@ const navItems = [
     </form>
   </section>
 
+<section style={cardStyle}>
+  <h2 style={{ marginTop: 0 }}>
+    Suivi du nombre de tournées par camion
+  </h2>
+
+  <p style={{ color: '#64748b' }}>
+    Nombre de tournées enregistrées pour la semaine, le mois et l’année en cours.
+  </p>
+
+  <div style={{ overflowX: 'auto' }}>
+    <table style={{
+      width: '100%',
+      borderCollapse: 'collapse',
+      minWidth: 600
+    }}>
+      <thead>
+        <tr style={{ textAlign: 'left', background: '#eef5f1' }}>
+          <th style={{ padding: 10 }}>Camion</th>
+          <th style={{ padding: 10 }}>Semaine</th>
+          <th style={{ padding: 10 }}>Mois</th>
+          <th style={{ padding: 10 }}>Année</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {camions.map(camion => (
+          <tr key={camion.id}>
+            <td style={{ padding: 10 }}>
+              {camion.nom} ({camion.format_kg} kg)
+            </td>
+            <td style={{ padding: 10 }}>
+              {compterTournees(camion.id, 'semaine')}
+            </td>
+            <td style={{ padding: 10 }}>
+              {compterTournees(camion.id, 'mois')}
+            </td>
+            <td style={{ padding: 10 }}>
+              {compterTournees(camion.id, 'annee')}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</section>
+     
     <section style={cardStyle}>
   <div style={{
     display: 'flex',
