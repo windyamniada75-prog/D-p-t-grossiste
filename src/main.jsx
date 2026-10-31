@@ -227,7 +227,69 @@ async function loadCamions() {
   setTournees(data || []);
   setTourneeLoading(false);
 }
-  
+  async function saveTournee(e) {
+  e.preventDefault();
+  setTourneeMessage('');
+
+  if (!supabase || !session) {
+    setTourneeMessage('Vous devez être connecté.');
+    return;
+  }
+
+  const camion = camions.find(c => c.id === tourneeCamionId);
+
+  if (!camion) {
+    setTourneeMessage('Veuillez sélectionner un camion.');
+    return;
+  }
+
+  const depart = Number(pleinesDepart);
+  const livrees = Number(pleinesLivrees);
+  const recuperees = Number(videsRecuperees);
+  const retour = Number(videsRetour);
+
+  if (
+    depart < 0 || livrees < 0 || recuperees < 0 || retour < 0 ||
+    livrees > depart
+  ) {
+    setTourneeMessage(
+      'Vérifiez les quantités : aucune valeur négative et les pleines livrées ne doivent pas dépasser le départ.'
+    );
+    return;
+  }
+
+  setTourneeLoading(true);
+
+  const { error } = await supabase
+    .from('tournees')
+    .insert({
+      date_tournee: tourneeDate,
+      camion_id: camion.id,
+      chauffeur: tourneeChauffeur || camion.chauffeur || '',
+      bouteilles_pleines_depart: depart,
+      bouteilles_pleines_livrees: livrees,
+      bouteilles_vides_recuperees: recuperees,
+      bouteilles_vides_retour: retour,
+      commentaire: tourneeCommentaire,
+      created_by: session.user.id
+    });
+
+  if (error) {
+    console.error('Erreur enregistrement tournée :', error.message);
+    setTourneeMessage('Erreur lors de l’enregistrement de la tournée.');
+    setTourneeLoading(false);
+    return;
+  }
+
+  setTourneeMessage('Tournée enregistrée avec succès.');
+  setPleinesDepart('');
+  setPleinesLivrees('');
+  setVidesRecuperees('');
+  setVidesRetour('');
+  setTourneeCommentaire('');
+  await loadTournees();
+  setTourneeLoading(false);
+}
   async function loadStockBouteilles() {
     if (!supabase || !session) return;
     setStockLoading(true);
@@ -1781,20 +1843,251 @@ const navItems = [
   </section>
 </>}
 
-    {page === 'tournees' && <>
+   {page === 'tournees' && <>
   <h1 style={{ marginTop: 0 }}>Gestion des livraisons</h1>
   <p style={{ color: '#64748b' }}>
-    Suivi des tournées, des bouteilles chargées, livrées et récupérées.
+    Suivi des tournées et des bouteilles.
   </p>
 
   <section style={cardStyle}>
-    <h2 style={{ marginTop: 0 }}>Module Livraisons</h2>
-    <p>
-      L’écran est en préparation. Nous allons ensuite ajouter le formulaire
-      d’enregistrement des tournées et leur historique.
-    </p>
+    <h2 style={{ marginTop: 0 }}>Enregistrer une tournée</h2>
+
+    <form onSubmit={saveTournee}>
+      <label>Date de tournée</label>
+      <input
+        type="date"
+        value={tourneeDate}
+        onChange={e => setTourneeDate(e.target.value)}
+        required
+        style={inputStyle}
+      />
+
+      <label>Camion</label>
+      <select
+        value={tourneeCamionId}
+        onChange={e => {
+          const id = e.target.value;
+          setTourneeCamionId(id);
+          const camion = camions.find(c => c.id === id);
+          setTourneeChauffeur(camion?.chauffeur || '');
+        }}
+        required
+        style={inputStyle}
+      >
+        <option value="">Sélectionner un camion</option>
+        {camions.map(camion => (
+          <option key={camion.id} value={camion.id}>
+            {camion.nom} — {camion.format_kg} kg — capacité {camion.capacite}
+          </option>
+        ))}
+      </select>
+
+      <label>Chauffeur</label>
+      <input
+        type="text"
+        value={tourneeChauffeur}
+        onChange={e => setTourneeChauffeur(e.target.value)}
+        required
+        style={inputStyle}
+      />
+
+      <label>Bouteilles pleines au départ</label>
+      <input
+        type="number"
+        min="0"
+        value={pleinesDepart}
+        onChange={e => setPleinesDepart(e.target.value)}
+        required
+        style={inputStyle}
+      />
+
+      <label>Bouteilles pleines livrées</label>
+      <input
+        type="number"
+        min="0"
+        value={pleinesLivrees}
+        onChange={e => setPleinesLivrees(e.target.value)}
+        required
+        style={inputStyle}
+      />
+
+      <label>Bouteilles vides récupérées chez les clients</label>
+      <input
+        type="number"
+        min="0"
+        value={videsRecuperees}
+        onChange={e => setVidesRecuperees(e.target.value)}
+        required
+        style={inputStyle}
+      />
+
+      <label>Bouteilles vides comptées au retour</label>
+      <input
+        type="number"
+        min="0"
+        value={videsRetour}
+        onChange={e => setVidesRetour(e.target.value)}
+        required
+        style={inputStyle}
+      />
+<section style={{
+  background: '#f8fafc',
+  border: '1px solid #e2e8f0',
+  borderRadius: 8,
+  padding: 14,
+  marginTop: 16,
+  marginBottom: 16
+}}>
+  <h3 style={{ marginTop: 0 }}>Calcul du retour</h3>
+
+  <p>
+    Bouteilles pleines restantes :{' '}
+    <strong>
+      {Math.max(0, Number(pleinesDepart || 0) - Number(pleinesLivrees || 0))}
+    </strong>
+  </p>
+
+  <p>
+    Total bouteilles au retour :{' '}
+    <strong>
+      {Math.max(0, Number(pleinesDepart || 0) - Number(pleinesLivrees || 0))
+        + Number(videsRetour || 0)}
+    </strong>
+  </p>
+
+  <p>
+    Capacité du camion :{' '}
+    <strong>
+      {camions.find(c => c.id === tourneeCamionId)?.capacite ?? '—'}
+    </strong>
+  </p>
+
+  <p>
+    Bouteilles manquantes pour remplir le camion :{' '}
+    <strong>
+      {tourneeCamionId
+        ? Math.max(
+            0,
+            Number(camions.find(c => c.id === tourneeCamionId)?.capacite || 0)
+            - (
+              Math.max(0, Number(pleinesDepart || 0) - Number(pleinesLivrees || 0))
+              + Number(videsRetour || 0)
+            )
+          )
+        : '—'}
+    </strong>
+  </p>
+</section>
+      <label>Commentaire (facultatif)</label>
+      <textarea
+        value={tourneeCommentaire}
+        onChange={e => setTourneeCommentaire(e.target.value)}
+        style={inputStyle}
+      />
+
+      {tourneeMessage && (
+        <p role="status">{tourneeMessage}</p>
+      )}
+
+      <button
+        type="submit"
+        disabled={tourneeLoading}
+        style={buttonStyle}
+      >
+        {tourneeLoading ? 'Enregistrement…' : 'Enregistrer la tournée'}
+      </button>
+    </form>
   </section>
-</>}      
+
+    <section style={cardStyle}>
+  <div style={{
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 12
+  }}>
+    <h2 style={{ marginTop: 0 }}>Historique des tournées</h2>
+    <button
+      type="button"
+      onClick={loadTournees}
+      disabled={tourneeLoading}
+      style={buttonStyle}
+    >
+      Actualiser
+    </button>
+  </div>
+
+  {tourneeLoading ? (
+    <p>Chargement des tournées…</p>
+  ) : tournees.length === 0 ? (
+    <p style={{ color: '#64748b' }}>
+      Aucune tournée enregistrée pour le moment.
+    </p>
+  ) : (
+    <div style={{ overflowX: 'auto' }}>
+      <table style={{
+        width: '100%',
+        borderCollapse: 'collapse',
+        minWidth: 900
+      }}>
+        <thead>
+          <tr style={{ textAlign: 'left', background: '#eef5f1' }}>
+            <th style={{ padding: 10 }}>Date</th>
+            <th style={{ padding: 10 }}>Camion</th>
+            <th style={{ padding: 10 }}>Chauffeur</th>
+            <th style={{ padding: 10 }}>Pleines départ</th>
+            <th style={{ padding: 10 }}>Pleines livrées</th>
+            <th style={{ padding: 10 }}>Pleines restantes</th>
+            <th style={{ padding: 10 }}>Vides récupérées</th>
+            <th style={{ padding: 10 }}>Vides retour</th>
+            <th style={{ padding: 10 }}>Total retour</th>
+            <th style={{ padding: 10 }}>Manquantes</th>
+          </tr>
+        </thead>
+        <tbody>
+          {tournees.map(tournee => {
+            const camion = camions.find(
+              c => c.id === tournee.camion_id
+            );
+            const pleinesRestantes =
+              tournee.bouteilles_pleines_depart -
+              tournee.bouteilles_pleines_livrees;
+            const totalRetour =
+              pleinesRestantes + tournee.bouteilles_vides_retour;
+            const manquantes = camion
+              ? Math.max(0, camion.capacite - totalRetour)
+              : '—';
+
+            return (
+              <tr key={tournee.id}>
+                <td style={{ padding: 10 }}>{tournee.date_tournee}</td>
+                <td style={{ padding: 10 }}>{camion?.nom || '—'}</td>
+                <td style={{ padding: 10 }}>{tournee.chauffeur}</td>
+                <td style={{ padding: 10 }}>
+                  {tournee.bouteilles_pleines_depart}
+                </td>
+                <td style={{ padding: 10 }}>
+                  {tournee.bouteilles_pleines_livrees}
+                </td>
+                <td style={{ padding: 10 }}>{pleinesRestantes}</td>
+                <td style={{ padding: 10 }}>
+                  {tournee.bouteilles_vides_recuperees}
+                </td>
+                <td style={{ padding: 10 }}>
+                  {tournee.bouteilles_vides_retour}
+                </td>
+                <td style={{ padding: 10 }}>{totalRetour}</td>
+                <td style={{ padding: 10 }}>{manquantes}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  )}
+</section>  
+    </>}   
         </main>
 
       </div>
