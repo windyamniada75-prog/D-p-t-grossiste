@@ -1735,7 +1735,20 @@ const navItems = [
   </section>
 </>}
 
-          
+    {page === 'tournees' && <>
+  <h1 style={{ marginTop: 0 }}>Gestion des livraisons</h1>
+  <p style={{ color: '#64748b' }}>
+    Suivi des tournées, des bouteilles chargées, livrées et récupérées.
+  </p>
+
+  <section style={cardStyle}>
+    <h2 style={{ marginTop: 0 }}>Module Livraisons</h2>
+    <p>
+      L’écran est en préparation. Nous allons ensuite ajouter le formulaire
+      d’enregistrement des tournées et leur historique.
+    </p>
+  </section>
+</>}      
         </main>
 
       </div>
