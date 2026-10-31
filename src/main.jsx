@@ -80,6 +80,16 @@ const [inventaireMessage, setInventaireMessage] = useState('');
   const [tournees, setTournees] = useState([]);
 const [tourneeLoading, setTourneeLoading] = useState(false);
 const [tourneeMessage, setTourneeMessage] = useState('');
+  const [tourneeDate, setTourneeDate] = useState(
+  new Date().toISOString().slice(0, 10)
+);
+const [tourneeCamionId, setTourneeCamionId] = useState('');
+const [tourneeChauffeur, setTourneeChauffeur] = useState('');
+const [pleinesDepart, setPleinesDepart] = useState('');
+const [pleinesLivrees, setPleinesLivrees] = useState('');
+const [videsRecuperees, setVidesRecuperees] = useState('');
+const [videsRetour, setVidesRetour] = useState('');
+const [tourneeCommentaire, setTourneeCommentaire] = useState('');
   const [stockQuantite, setStockQuantite] = useState('');
   const [stockMessage, setStockMessage] = useState('');
   const [stockVue, setStockVue] = useState('actif');
