@@ -227,6 +227,52 @@ async function loadCamions() {
   setTournees(data || []);
   setTourneeLoading(false);
 }
+
+function getDebutSemaine(date) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+
+  const jour = d.getDay();
+  const decalage = jour === 0 ? 6 : jour - 1;
+
+  d.setDate(d.getDate() - decalage);
+  return d;
+}
+
+function compterTournees(camionId, periode) {
+  const maintenant = new Date();
+
+  return tournees.filter(tournee => {
+    if (tournee.camion_id !== camionId) return false;
+
+    const dateTournee = new Date(
+      `${tournee.date_tournee}T00:00:00`
+    );
+
+    if (periode === 'semaine') {
+      const debutSemaine = getDebutSemaine(maintenant);
+      const finSemaine = new Date(debutSemaine);
+      finSemaine.setDate(finSemaine.getDate() + 7);
+
+      return dateTournee >= debutSemaine &&
+        dateTournee < finSemaine;
+    }
+
+    if (periode === 'mois') {
+      return (
+        dateTournee.getMonth() === maintenant.getMonth() &&
+        dateTournee.getFullYear() === maintenant.getFullYear()
+      );
+    }
+
+    if (periode === 'annee') {
+      return dateTournee.getFullYear() === maintenant.getFullYear();
+    }
+
+    return false;
+  }).length;
+}
+  
   async function saveTournee(e) {
   e.preventDefault();
   setTourneeMessage('');
