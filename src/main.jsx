@@ -290,6 +290,27 @@ async function loadCamions() {
   await loadTournees();
   setTourneeLoading(false);
 }
+  async function deleteTournee(id) {
+  const confirmation = window.confirm(
+    'Voulez-vous vraiment supprimer cette tournée ?'
+  );
+
+  if (!confirmation) return;
+
+  const { error } = await supabase
+    .from('tournees')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error('Erreur suppression tournée :', error.message);
+    setTourneeMessage('Erreur lors de la suppression.');
+    return;
+  }
+
+  setTourneeMessage('Tournée supprimée.');
+  await loadTournees();
+}
   async function loadStockBouteilles() {
     if (!supabase || !session) return;
     setStockLoading(true);
@@ -2043,6 +2064,7 @@ const navItems = [
             <th style={{ padding: 10 }}>Vides retour</th>
             <th style={{ padding: 10 }}>Total retour</th>
             <th style={{ padding: 10 }}>Manquantes</th>
+            <th style={{ padding: 10 }}>Action</th>
           </tr>
         </thead>
         <tbody>
@@ -2079,6 +2101,22 @@ const navItems = [
                 </td>
                 <td style={{ padding: 10 }}>{totalRetour}</td>
                 <td style={{ padding: 10 }}>{manquantes}</td>
+                <td style={{ padding: 10 }}>
+  <button
+    type="button"
+    onClick={() => deleteTournee(tournee.id)}
+    style={{
+      background: '#dc2626',
+      color: 'white',
+      border: 'none',
+      padding: '6px 10px',
+      borderRadius: 6,
+      cursor: 'pointer'
+    }}
+  >
+    Supprimer
+  </button>
+</td>
               </tr>
             );
           })}
