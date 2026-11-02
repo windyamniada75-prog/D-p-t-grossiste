@@ -2399,6 +2399,7 @@ const navItems = [
 </section>  
     </>}   
 {page === 'comptabilite' && (
+  <>
   <section style={cardStyle}>
     <h2 style={{ marginTop: 0 }}>Comptabilité des tournées</h2>
     <p style={{ color: '#64748b' }}>
@@ -2634,7 +2635,8 @@ const navItems = [
         {depenseLoading ? 'Enregistrement…' : 'Enregistrer la dépense'}
       </button>
     </form>
-  </section>
+   </section>
+  </>
 )}
           
         </main>
