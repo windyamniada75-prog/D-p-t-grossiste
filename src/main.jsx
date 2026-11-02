@@ -90,6 +90,11 @@ const [pleinesLivrees, setPleinesLivrees] = useState('');
 const [videsRecuperees, setVidesRecuperees] = useState('');
 const [videsRetour, setVidesRetour] = useState('');
 const [tourneeCommentaire, setTourneeCommentaire] = useState('');
+  const [comptabilite, setComptabilite] = useState([]);
+const [comptaLoading, setComptaLoading] = useState(false);
+const [comptaMessage, setComptaMessage] = useState('');
+const [montantsRemis, setMontantsRemis] = useState({});
+const [commentairesCompta, setCommentairesCompta] = useState({});
   const [stockQuantite, setStockQuantite] = useState('');
   const [stockMessage, setStockMessage] = useState('');
   const [stockVue, setStockVue] = useState('actif');
@@ -140,6 +145,7 @@ useEffect(() => {
   loadInventaires();
   loadRations();
   loadEmployes();
+  loadComptabilite();
 }, [session]);
 
 
@@ -271,6 +277,82 @@ function compterTournees(camionId, periode) {
 
     return false;
   }).length;
+}
+  async function loadComptabilite() {
+  if (!supabase || !session) return;
+
+  setComptaLoading(true);
+
+  const { data, error } = await supabase
+    .from('comptabilite_tournees')
+    .select(`
+      id,
+      tournee_id,
+      montant_attendu_fcfa,
+      montant_remis_fcfa,
+      commentaire
+    `);
+
+  if (error) {
+    console.error('Erreur chargement comptabilité :', error.message);
+    setComptaMessage('Impossible de charger les remises.');
+    setComptaLoading(false);
+    return;
+  }
+
+  setComptabilite(data || []);
+  setComptaLoading(false);
+}
+function calculerMontantAttendu(tournee) {
+  const camion = camions.find(c => c.id === tournee.camion_id);
+
+  if (!camion) return 0;
+
+  const quantite = Number(tournee.bouteilles_pleines_livrees || 0);
+  const tarif = Number(camion.format_kg) === 6 ? 1750 : 5000;
+
+  return quantite * tarif;
+}
+
+async function saveComptabilite(tournee) {
+  setComptaMessage('');
+
+  if (!supabase || !session) {
+    setComptaMessage('Vous devez être connecté.');
+    return;
+  }
+
+  const montantAttendu = calculerMontantAttendu(tournee);
+  const montantRemis = Number(montantsRemis[tournee.id] || 0);
+
+  if (montantRemis < 0) {
+    setComptaMessage('Le montant remis ne peut pas être négatif.');
+    return;
+  }
+
+  const commentaire = commentairesCompta[tournee.id] || '';
+
+  const { error } = await supabase
+    .from('comptabilite_tournees')
+    .upsert({
+      tournee_id: tournee.id,
+      montant_attendu_fcfa: montantAttendu,
+      montant_remis_fcfa: montantRemis,
+      commentaire,
+      created_by: session.user.id,
+      updated_at: new Date().toISOString()
+    }, {
+      onConflict: 'tournee_id'
+    });
+
+  if (error) {
+    console.error('Erreur enregistrement comptabilité :', error.message);
+    setComptaMessage('Erreur lors de l’enregistrement.');
+    return;
+  }
+
+  setComptaMessage('Remise enregistrée avec succès.');
+  await loadComptabilite();
 }
   
   async function saveTournee(e) {
@@ -975,6 +1057,7 @@ const navItems = [
   ['rations', 'Rations'],
   ['employes', 'Employés'],
   ['tournees', 'Livraisons'],
+  ['comptabilite', 'Comptabilité'],
 ];
 
 
@@ -2218,6 +2301,142 @@ const navItems = [
   )}
 </section>  
     </>}   
+{page === 'comptabilite' && (
+  <section style={cardStyle}>
+    <h2 style={{ marginTop: 0 }}>Comptabilité des tournées</h2>
+    <p style={{ color: '#64748b' }}>
+      Enregistrement de l’argent remis par les chauffeurs après chaque tournée.
+    </p>
+
+    {comptaMessage && (
+      <p style={{ color: '#2563eb' }}>{comptaMessage}</p>
+    )}
+
+    {comptaLoading ? (
+      <p>Chargement…</p>
+    ) : tournees.length === 0 ? (
+      <p>Aucune tournée enregistrée.</p>
+    ) : (
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{
+          width: '100%',
+          borderCollapse: 'collapse',
+          minWidth: 850
+        }}>
+          <thead>
+            <tr style={{ textAlign: 'left', background: '#eef5f1' }}>
+              <th style={{ padding: 10 }}>Date</th>
+              <th style={{ padding: 10 }}>Camion</th>
+              <th style={{ padding: 10 }}>Chauffeur</th>
+              <th style={{ padding: 10 }}>Bouteilles livrées</th>
+              <th style={{ padding: 10 }}>Montant attendu</th>
+              <th style={{ padding: 10 }}>Montant remis</th>
+              <th style={{ padding: 10 }}>Reste à payer</th>
+              <th style={{ padding: 10 }}>Commentaire</th>
+              <th style={{ padding: 10 }}>Action</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {tournees.map(tournee => {
+              const camion = camions.find(
+                c => c.id === tournee.camion_id
+              );
+
+              const montantAttendu =
+                calculerMontantAttendu(tournee);
+
+              const remiseExistante = comptabilite.find(
+                c => c.tournee_id === tournee.id
+              );
+
+              const montantRemis = Number(
+                montantsRemis[tournee.id] ??
+                remiseExistante?.montant_remis_fcfa ??
+                0
+              );
+
+              const reste = montantAttendu - montantRemis;
+
+              return (
+                <tr key={tournee.id}>
+                  <td style={{ padding: 10 }}>
+                    {tournee.date_tournee}
+                  </td>
+                  <td style={{ padding: 10 }}>
+                    {camion?.nom || '—'}
+                  </td>
+                  <td style={{ padding: 10 }}>
+                    {tournee.chauffeur}
+                  </td>
+                  <td style={{ padding: 10 }}>
+                    {tournee.bouteilles_pleines_livrees}
+                  </td>
+                  <td style={{ padding: 10 }}>
+                    {montantAttendu.toLocaleString('fr-FR')} F
+                  </td>
+                  <td style={{ padding: 10 }}>
+                    <input
+                      type="number"
+                      min="0"
+                      value={
+                        montantsRemis[tournee.id] ??
+                        remiseExistante?.montant_remis_fcfa ??
+                        ''
+                      }
+                      onChange={e =>
+                        setMontantsRemis(prev => ({
+                          ...prev,
+                          [tournee.id]: e.target.value
+                        }))
+                      }
+                      style={{ width: 120, padding: 8 }}
+                    />
+                  </td>
+                  <td style={{
+                    padding: 10,
+                    color: reste > 0 ? '#dc2626' : '#15803d',
+                    fontWeight: 'bold'
+                  }}>
+                    {reste.toLocaleString('fr-FR')} F
+                  </td>
+                  <td style={{ padding: 10 }}>
+                    <input
+                      type="text"
+                      value={
+                        commentairesCompta[tournee.id] ??
+                        remiseExistante?.commentaire ??
+                        ''
+                      }
+                      onChange={e =>
+                        setCommentairesCompta(prev => ({
+                          ...prev,
+                          [tournee.id]: e.target.value
+                        }))
+                      }
+                      placeholder="Observation"
+                      style={{ width: 150, padding: 8 }}
+                    />
+                  </td>
+                  <td style={{ padding: 10 }}>
+                    <button
+                      type="button"
+                      onClick={() => saveComptabilite(tournee)}
+                      style={buttonStyle}
+                    >
+                      Enregistrer
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    )}
+  </section>
+)}
+          
         </main>
 
       </div>
