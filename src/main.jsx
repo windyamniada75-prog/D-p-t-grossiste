@@ -95,6 +95,18 @@ const [comptaLoading, setComptaLoading] = useState(false);
 const [comptaMessage, setComptaMessage] = useState('');
 const [montantsRemis, setMontantsRemis] = useState({});
 const [commentairesCompta, setCommentairesCompta] = useState({});
+  const [depenses, setDepenses] = useState([]);
+const [depenseLoading, setDepenseLoading] = useState(false);
+const [depenseMessage, setDepenseMessage] = useState('');
+
+const [dateDepense, setDateDepense] = useState(
+  new Date().toISOString().slice(0, 10)
+);
+const [categorieDepense, setCategorieDepense] = useState('hors_tournee');
+const [depenseTourneeId, setDepenseTourneeId] = useState('');
+const [motifDepense, setMotifDepense] = useState('');
+const [montantDepense, setMontantDepense] = useState('');
+const [commentaireDepense, setCommentaireDepense] = useState('');
   const [stockQuantite, setStockQuantite] = useState('');
   const [stockMessage, setStockMessage] = useState('');
   const [stockVue, setStockVue] = useState('actif');
