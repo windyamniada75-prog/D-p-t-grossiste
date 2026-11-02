@@ -2636,9 +2636,6 @@ const navItems = [
       </button>
     </form>
    </section>
-          </button>
-    </form>
-  </section>
 
   <section style={{ ...cardStyle, marginTop: 20 }}>
     <h2 style={{ marginTop: 0 }}>Historique des dépenses</h2>
