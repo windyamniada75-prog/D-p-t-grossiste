@@ -158,6 +158,7 @@ useEffect(() => {
   loadRations();
   loadEmployes();
   loadComptabilite();
+  loadDepenses();
 }, [session]);
 
 
@@ -290,6 +291,7 @@ function compterTournees(camionId, periode) {
     return false;
   }).length;
 }
+  
   async function loadComptabilite() {
   if (!supabase || !session) return;
 
@@ -326,6 +328,89 @@ function calculerMontantAttendu(tournee) {
   return quantite * tarif;
 }
 
+async function loadDepenses() {
+  if (!supabase || !session) return;
+
+  setDepenseLoading(true);
+
+  const { data, error } = await supabase
+    .from('depenses_comptabilite')
+    .select(`
+      id,
+      date_depense,
+      categorie,
+      tournee_id,
+      motif,
+      montant_fcfa,
+      commentaire,
+      created_at
+    `)
+    .order('date_depense', { ascending: false });
+
+  if (error) {
+    console.error('Erreur chargement dépenses :', error.message);
+    setDepenseMessage('Impossible de charger les dépenses.');
+    setDepenseLoading(false);
+    return;
+  }
+
+  setDepenses(data || []);
+  setDepenseLoading(false);
+}
+
+async function saveDepense(e) {
+  e.preventDefault();
+  setDepenseMessage('');
+
+  if (!supabase || !session) {
+    setDepenseMessage('Vous devez être connecté.');
+    return;
+  }
+
+  const montant = Number(montantDepense);
+
+  if (!motifDepense.trim() || montant <= 0) {
+    setDepenseMessage('Veuillez saisir un motif et un montant valide.');
+    return;
+  }
+
+  if (categorieDepense === 'tournee' && !depenseTourneeId) {
+    setDepenseMessage('Veuillez sélectionner la tournée concernée.');
+    return;
+  }
+
+  setDepenseLoading(true);
+
+  const { error } = await supabase
+    .from('depenses_comptabilite')
+    .insert({
+      date_depense: dateDepense,
+      categorie: categorieDepense,
+      tournee_id:
+        categorieDepense === 'tournee' ? depenseTourneeId : null,
+      motif: motifDepense.trim(),
+      montant_fcfa: montant,
+      commentaire: commentaireDepense,
+      created_by: session.user.id
+    });
+
+  if (error) {
+    console.error('Erreur enregistrement dépense :', error.message);
+    setDepenseMessage('Erreur lors de l’enregistrement de la dépense.');
+    setDepenseLoading(false);
+    return;
+  }
+
+  setDepenseMessage('Dépense enregistrée avec succès.');
+  setMotifDepense('');
+  setMontantDepense('');
+  setCommentaireDepense('');
+  setDepenseTourneeId('');
+
+  await loadDepenses();
+  setDepenseLoading(false);
+}
+  
 async function saveComptabilite(tournee) {
   setComptaMessage('');
 
@@ -2444,8 +2529,111 @@ const navItems = [
             })}
           </tbody>
         </table>
-      </div>
+           </div>
     )}
+  </section>
+
+  <section style={{ ...cardStyle, marginTop: 20 }}>
+    <h2 style={{ marginTop: 0 }}>Enregistrer une dépense</h2>
+
+    {depenseMessage && (
+      <p style={{ color: '#2563eb' }}>{depenseMessage}</p>
+    )}
+
+    <form onSubmit={saveDepense}>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+        gap: 12
+      }}>
+        <label>
+          Date
+          <input
+            type="date"
+            value={dateDepense}
+            onChange={e => setDateDepense(e.target.value)}
+            required
+            style={{ width: '100%', padding: 8 }}
+          />
+        </label>
+
+        <label>
+          Type de dépense
+          <select
+            value={categorieDepense}
+            onChange={e => {
+              setCategorieDepense(e.target.value);
+              setDepenseTourneeId('');
+            }}
+            style={{ width: '100%', padding: 8 }}
+          >
+            <option value="tournee">Dépense liée à une tournée</option>
+            <option value="hors_tournee">Dépense hors tournée</option>
+          </select>
+        </label>
+
+        {categorieDepense === 'tournee' && (
+          <label>
+            Tournée concernée
+            <select
+              value={depenseTourneeId}
+              onChange={e => setDepenseTourneeId(e.target.value)}
+              required
+              style={{ width: '100%', padding: 8 }}
+            >
+              <option value="">Choisir une tournée</option>
+              {tournees.map(t => (
+                <option key={t.id} value={t.id}>
+                  {t.date_tournee} — {t.chauffeur}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+
+        <label>
+          Motif
+          <input
+            type="text"
+            value={motifDepense}
+            onChange={e => setMotifDepense(e.target.value)}
+            placeholder="Carburant, réparation, fournitures..."
+            required
+            style={{ width: '100%', padding: 8 }}
+          />
+        </label>
+
+        <label>
+          Montant (FCFA)
+          <input
+            type="number"
+            min="1"
+            value={montantDepense}
+            onChange={e => setMontantDepense(e.target.value)}
+            required
+            style={{ width: '100%', padding: 8 }}
+          />
+        </label>
+
+        <label>
+          Observation
+          <input
+            type="text"
+            value={commentaireDepense}
+            onChange={e => setCommentaireDepense(e.target.value)}
+            style={{ width: '100%', padding: 8 }}
+          />
+        </label>
+      </div>
+
+      <button
+        type="submit"
+        disabled={depenseLoading}
+        style={{ ...buttonStyle, marginTop: 15 }}
+      >
+        {depenseLoading ? 'Enregistrement…' : 'Enregistrer la dépense'}
+      </button>
+    </form>
   </section>
 )}
           
