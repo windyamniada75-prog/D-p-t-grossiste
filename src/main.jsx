@@ -2636,6 +2636,72 @@ const navItems = [
       </button>
     </form>
    </section>
+          </button>
+    </form>
+  </section>
+
+  <section style={{ ...cardStyle, marginTop: 20 }}>
+    <h2 style={{ marginTop: 0 }}>Historique des dépenses</h2>
+
+    {depenseLoading ? (
+      <p>Chargement des dépenses…</p>
+    ) : depenses.length === 0 ? (
+      <p>Aucune dépense enregistrée.</p>
+    ) : (
+      <>
+        <p style={{ color: '#64748b' }}>
+          Total affiché :{' '}
+          {depenses
+            .reduce((total, d) => total + Number(d.montant_fcfa || 0), 0)
+            .toLocaleString('fr-FR')} F CFA
+        </p>
+
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{
+            width: '100%',
+            borderCollapse: 'collapse',
+            minWidth: 750
+          }}>
+            <thead>
+              <tr style={{ textAlign: 'left', background: '#eef5f1' }}>
+                <th style={{ padding: 10 }}>Date</th>
+                <th style={{ padding: 10 }}>Type</th>
+                <th style={{ padding: 10 }}>Motif</th>
+                <th style={{ padding: 10 }}>Montant</th>
+                <th style={{ padding: 10 }}>Observation</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {depenses.map(depense => (
+                <tr key={depense.id}>
+                  <td style={{ padding: 10 }}>
+                    {depense.date_depense}
+                  </td>
+                  <td style={{ padding: 10 }}>
+                    {depense.categorie === 'tournee'
+                      ? 'Dépense liée à une tournée'
+                      : 'Dépense hors tournée'}
+                  </td>
+                  <td style={{ padding: 10 }}>
+                    {depense.motif}
+                  </td>
+                  <td style={{ padding: 10 }}>
+                    {Number(depense.montant_fcfa).toLocaleString('fr-FR')} F
+                  </td>
+                  <td style={{ padding: 10 }}>
+                    {depense.commentaire || '—'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </>
+    )}
+  </section>
+  </>
+)}
   </>
 )}
           
