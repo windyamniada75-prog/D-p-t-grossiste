@@ -2702,8 +2702,6 @@ const navItems = [
   </section>
   </>
 )}
-  </>
-)}
           
         </main>
 
