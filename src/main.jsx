@@ -1214,8 +1214,7 @@ const navItems = [
           {navItems.map(([key, label]) => (
             <button key={key} type="button" onClick={() => navigate(key)} style={{ display: 'block', width: '100%', textAlign: 'left', padding: 12, marginBottom: 6, border: 0, borderRadius: 8, cursor: 'pointer', background: page === key ? '#e3f4e9' : 'transparent', color: page === key ? '#176b45' : '#334155', fontWeight: page === key ? 700 : 500 }}>{label}</button>
           ))}
-          <div style={{ margin: '20px 8px 8px', fontSize: 12, color: '#64748b' }}>AUTRES MODULES</div>
-          {otherModules.map(label => <div key={label} style={{ padding: '10px 8px', color: '#94a3b8', fontSize: 14 }}>{label} · bientôt</div>)}
+         
         </aside>
 
         <main style={{ padding: 24, flex: 1, minWidth: 280 }}>
