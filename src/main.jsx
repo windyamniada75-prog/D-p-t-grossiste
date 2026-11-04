@@ -1226,7 +1226,8 @@ const navItems = [
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 16, margin: '24px 0' }}>
               <article style={cardStyle}><div style={{ color: '#64748b' }}>Total des clients</div><h2 style={{ fontSize: 32, margin: '10px 0' }}>{clients.length}</h2><button type="button" style={buttonStyle} onClick={() => navigate('clients')}>Ouvrir Clients →</button></article>
               <article style={cardStyle}><div style={{ color: '#64748b' }}>Clients actifs</div><h2 style={{ fontSize: 32, margin: '10px 0' }}>{activeCount}</h2><button type="button" style={{ ...buttonStyle, background: '#e3f4e9', color: '#176b45' }} onClick={() => navigate('clients')}>Voir les clients</button></article>
-    
+              </div>
+              
             <h2>Modules de gestion</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
              
