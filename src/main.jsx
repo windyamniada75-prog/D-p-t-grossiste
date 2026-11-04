@@ -107,6 +107,18 @@ const [depenseTourneeId, setDepenseTourneeId] = useState('');
 const [motifDepense, setMotifDepense] = useState('');
 const [montantDepense, setMontantDepense] = useState('');
 const [commentaireDepense, setCommentaireDepense] = useState('');
+
+const [filtreDepense, setFiltreDepense] = useState('toutes');
+const [dateFiltreDepense, setDateFiltreDepense] = useState(
+  new Date().toISOString().slice(0, 10)
+);
+const [moisFiltreDepense, setMoisFiltreDepense] = useState(
+  new Date().toISOString().slice(0, 7)
+);
+const [anneeFiltreDepense, setAnneeFiltreDepense] = useState(
+  String(new Date().getFullYear())
+);
+  
   const [stockQuantite, setStockQuantite] = useState('');
   const [stockMessage, setStockMessage] = useState('');
   const [stockVue, setStockVue] = useState('actif');
@@ -118,6 +130,27 @@ const [stockActionId, setStockActionId] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState({ nom: '', telephone: '', adresse: '', actif: true });
 
+const depensesFiltrees = depenses.filter(depense => {
+  if (filtreDepense === 'jour') {
+    return depense.date_depense === dateFiltreDepense;
+  }
+
+  if (filtreDepense === 'mois') {
+    return depense.date_depense?.slice(0, 7) === moisFiltreDepense;
+  }
+
+  if (filtreDepense === 'annee') {
+    return depense.date_depense?.slice(0, 4) === anneeFiltreDepense;
+  }
+
+  return true;
+});
+
+const totalDepensesFiltrees = depensesFiltrees.reduce(
+  (total, depense) => total + Number(depense.montant_fcfa || 0),
+  0
+);
+  
   useEffect(() => {
     if (!supabase) { setLoading(false); return; }
     let alive = true;
@@ -2637,22 +2670,72 @@ const navItems = [
     </form>
    </section>
 
-  <section style={{ ...cardStyle, marginTop: 20 }}>
-    <h2 style={{ marginTop: 0 }}>Historique des dépenses</h2>
+ <section style={{ ...cardStyle, marginTop: 20 }}>
+  <h2 style={{ marginTop: 0 }}>Historique des dépenses</h2>
 
-    {depenseLoading ? (
-      <p>Chargement des dépenses…</p>
-    ) : depenses.length === 0 ? (
-      <p>Aucune dépense enregistrée.</p>
-    ) : (
-      <>
-        <p style={{ color: '#64748b' }}>
-          Total affiché :{' '}
-          {depenses
-            .reduce((total, d) => total + Number(d.montant_fcfa || 0), 0)
-            .toLocaleString('fr-FR')} F CFA
-        </p>
+  {depenseLoading ? (
+    <p>Chargement des dépenses…</p>
+  ) : (
+    <>
+      <div style={{
+        display: 'flex',
+        gap: 12,
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        marginBottom: 15
+      }}>
+        <label>
+          Période :{' '}
+          <select
+            value={filtreDepense}
+            onChange={e => setFiltreDepense(e.target.value)}
+            style={{ padding: 8 }}
+          >
+            <option value="toutes">Toutes les dépenses</option>
+            <option value="jour">Par jour</option>
+            <option value="mois">Par mois</option>
+            <option value="annee">Par année</option>
+          </select>
+        </label>
 
+        {filtreDepense === 'jour' && (
+          <input
+            type="date"
+            value={dateFiltreDepense}
+            onChange={e => setDateFiltreDepense(e.target.value)}
+            style={{ padding: 8 }}
+          />
+        )}
+
+        {filtreDepense === 'mois' && (
+          <input
+            type="month"
+            value={moisFiltreDepense}
+            onChange={e => setMoisFiltreDepense(e.target.value)}
+            style={{ padding: 8 }}
+          />
+        )}
+
+        {filtreDepense === 'annee' && (
+          <input
+            type="number"
+            value={anneeFiltreDepense}
+            onChange={e => setAnneeFiltreDepense(e.target.value)}
+            style={{ padding: 8, width: 100 }}
+          />
+        )}
+      </div>
+
+      <p style={{ color: '#64748b' }}>
+        Nombre de dépenses : {depensesFiltrees.length}
+        {' — '}
+        Total affiché :{' '}
+        {totalDepensesFiltrees.toLocaleString('fr-FR')} F CFA
+      </p>
+
+      {depensesFiltrees.length === 0 ? (
+        <p>Aucune dépense pour cette période.</p>
+      ) : (
         <div style={{ overflowX: 'auto' }}>
           <table style={{
             width: '100%',
@@ -2670,7 +2753,7 @@ const navItems = [
             </thead>
 
             <tbody>
-              {depenses.map(depense => (
+              {depensesFiltrees.map(depense => (
                 <tr key={depense.id}>
                   <td style={{ padding: 10 }}>
                     {depense.date_depense}
@@ -2694,11 +2777,10 @@ const navItems = [
             </tbody>
           </table>
         </div>
-      </>
-    )}
-  </section>
-  </>
-)}
+      )}
+    </>
+  )}
+</section>
           
         </main>
 
